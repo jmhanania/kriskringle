@@ -333,3 +333,5 @@ details.acct .menu-pop { min-width: 220px; }
 /* The account button reads "Account ▾" on desktop and "☰ Menu" on phones (where it also holds Organise / Super admin) */
 .lbl-mob { display: none; }
 @media (max-width: 600px) { .lbl-desk { display: none; } .lbl-mob { display: inline; } }
+/* Phones auto-link email addresses; the signed-in email in the menu is just a label */
+.menu-email, .menu-email a { color: var(--muted) !important; text-decoration: none !important; pointer-events: none; }
