@@ -297,3 +297,22 @@ form > .field, .stack > .field, .msgbox .field { flex: 0 0 auto; }
   .segmented { position: sticky; top: 8px; z-index: 3; backdrop-filter: blur(6px); background: rgba(8,37,25,.85); }
   .segmented button { font-size: 13px; padding: 0 var(--s2); }
 }
+
+/* ---------- Account icon menu (top bar) ---------- */
+.topbar { flex-wrap: nowrap; }
+.nav-links { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.nav-links::-webkit-scrollbar { display: none; }
+.nav-links a { white-space: nowrap; }
+details.acct > summary {
+  min-height: 36px; padding: 0 var(--s3); border-radius: 999px; font-weight: 600; font-size: var(--fs-sm); letter-spacing: 0;
+  background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.25); color: var(--on-pine); white-space: nowrap;
+}
+details.acct > summary:hover, details.acct[open] > summary { background: rgba(255,255,255,.22); }
+details.acct .menu-pop { min-width: 220px; }
+.menu-email { padding: var(--s2) var(--s3); color: var(--muted); font-size: var(--fs-xs); border-bottom: 1px solid var(--line); margin-bottom: var(--s1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-pop a { display: flex; align-items: center; min-height: 40px; padding: 0 var(--s3); border-radius: 8px; color: var(--ink) !important; text-decoration: none; font-size: var(--fs-sm); }
+.menu-pop a:hover { background: var(--card-2); }
+@media (max-width: 600px) {
+  .topbar { flex-wrap: nowrap; }
+  .nav-links { order: 0; flex-basis: auto; }
+}

@@ -20,7 +20,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=Lora:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="theme.css?v=2026-11-22d">
+<link rel="stylesheet" href="theme.css?v=2026-11-22e">
 </head>
 <body>
 <canvas id="snow"></canvas>
@@ -28,9 +28,14 @@
   <a class="brand" href="./">🎅 Kris Kringle</a>
   <div class="nav-links" id="navLinks"></div>
   <span class="spacer"></span>
-  <span class="whoami" id="whoami"></span>
-  <a href="#account" class="hidden" id="accountLink">Account</a>
-  <button class="small link" id="signOut">Sign out</button>
+  <details class="menu acct">
+    <summary>Account ▾</summary>
+    <div class="menu-pop">
+      <div class="menu-email" id="whoami"></div>
+      <a href="./#account" id="accountLink">Account</a>
+      <button type="button" id="signOut">Sign out</button>
+    </div>
+  </details>
 </nav>
 <main>
   <header>
@@ -192,8 +197,8 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-11-22d"></script>
-<script src="common.js?v=2026-11-22d"></script>
+<script src="config.js?v=2026-11-22e"></script>
+<script src="common.js?v=2026-11-22e"></script>
 <script>
 const FAMILY_KEY = "kk.family";
 let account = null;   // { email, is_super_admin, families: [...] }
@@ -601,7 +606,11 @@ $("viewTabs").addEventListener("click", e => {
   const v = e.target.closest("[data-view]")?.dataset.view;
   if (v) { setView(v); window.scrollTo({ top: $("viewTabs").offsetTop - 12, behavior: "smooth" }); }
 });
-$("accountLink").addEventListener("click", e => { e.preventDefault(); setView("account"); });
+$("accountLink").addEventListener("click", e => {
+  e.preventDefault();
+  e.target.closest("details").open = false;
+  if (familyId) setView("account"); else showPicker();
+});
 addEventListener("hashchange", () => { const v = location.hash.slice(1); if (VIEWS.includes(v) && v !== currentView) setView(v); });
 
 // ---------- Boot ----------
@@ -633,7 +642,6 @@ async function boot() {
     return;
   }
 
-  show("accountLink");
   if (account.families.length > 1) { showPicker(); renderFooter(); return; }
   try { await switchFamily(account.families[0].family_id); } catch (err) { showMsg($("error"), err.message); }
 }
