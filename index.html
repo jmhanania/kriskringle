@@ -113,9 +113,9 @@
   <!-- Signed in, viewing a family -->
   <div id="page" class="hidden">
     <nav class="segmented" id="viewTabs" aria-label="Sections">
+      <button data-view="board">📣 Board<span class="dot hidden" id="boardDot"></span></button>
       <button data-view="kk">🎅 Kris Kringle<span class="dot hidden" id="kkDot"></span></button>
       <button data-view="wish">🎁 My wish list<span class="dot hidden" id="wishDot"></span></button>
-      <button data-view="board">📣 Board<span class="dot hidden" id="boardDot"></span></button>
     </nav>
 
     <div class="pane" data-pane="board">
@@ -557,7 +557,7 @@ async function switchFamily(id) {
   hide("familyPicker");
   await loadFamily(id);
   $("switchFamily").classList.toggle("hidden", account.families.length < 2);
-  setView(currentView);
+  setView(VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "board");
   renderFooter();
 }
 
@@ -583,13 +583,12 @@ $("familyCards").addEventListener("click", e => {
 $("switchFamily").addEventListener("click", showPicker);
 
 // ---------- Tabs inside a family: Kris Kringle · My wish list · Board (+ Account) ----------
-const VIEW_KEY = "kk.view";
-const VIEWS = ["kk", "wish", "board", "account"];
-let currentView = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1)
-  : (() => { try { return localStorage.getItem(VIEW_KEY) || "kk"; } catch { return "kk"; } })();
+// Everyone lands on the Board; a link like …/#wish opens a specific tab instead.
+const VIEWS = ["board", "kk", "wish", "account"];
+let currentView = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "board";
 
 function setView(v) {
-  if (!VIEWS.includes(v)) v = "kk";
+  if (!VIEWS.includes(v)) v = "board";
   // Leaving the Kris Kringle tab hides the secret details again.
   if (v !== "kk" && secretsShown) setSecrets(false);
   currentView = v;
@@ -599,7 +598,6 @@ function setView(v) {
     b.setAttribute("aria-current", b.dataset.view === v ? "page" : "false");
   });
   $("accountLink").classList.toggle("active", v === "account");
-  try { localStorage.setItem(VIEW_KEY, v === "account" ? "kk" : v); } catch {}
   if (location.hash.slice(1) !== v) history.replaceState(null, "", "#" + v);
 }
 $("viewTabs").addEventListener("click", e => {
