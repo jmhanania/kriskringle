@@ -37,7 +37,7 @@
           <input type="text" id="wPrice" placeholder="Approx. price ($)" inputmode="decimal" style="flex:0 1 150px">
         </div>
         <div class="row" style="margin-top:8px">
-          <input type="url" id="wUrl" placeholder="Link (optional), e.g. https://www.amazon.ca/…" maxlength="1000">
+          <input type="text" id="wUrl" placeholder="Link (optional): paste from Amazon, a store website, etc." maxlength="1000" inputmode="url" autocomplete="off">
         </div>
         <div style="margin-top:8px">
           <textarea id="wNotes" placeholder="Notes: size, colour, where to buy… (optional)" maxlength="1000"></textarea>
@@ -132,8 +132,9 @@ function resetForm() {
 
 $("wishForm").addEventListener("submit", async e => {
   e.preventDefault();
-  const url = $("wUrl").value.trim();
-  if (url && !safeUrl(url)) { showMsg($("wishMsg"), "Links need to start with http:// or https://"); return; }
+  let url = $("wUrl").value.trim();
+  if (url && !/^[a-z]+:/i.test(url)) url = "https://" + url;  // accept "amazon.ca/..." without the https://
+  if (url && (!safeUrl(url) || !/^https?:\/\/[^\s/]+\.[^\s/]+/i.test(url))) { showMsg($("wishMsg"), "That link doesn't look right. Try copying it from your browser's address bar."); return; }
   $("wSave").disabled = true;
   try {
     await rpc("save_wish", {

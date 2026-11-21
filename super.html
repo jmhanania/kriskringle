@@ -69,7 +69,7 @@ function render() {
       <div class="row" style="justify-content:space-between">
         <div>
           <strong>${esc(f.name)}</strong>${mine ? ` <span class="muted">(your family)</span>` : ""}
-          <div class="muted">👥 ${f.people_count} people · 🎄 ${f.event_count} exchange${f.event_count === 1 ? "" : "s"} · joined ${new Date(f.created_at).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" })}</div>
+          <div class="muted">👥 ${f.people_count} ${f.people_count === 1 ? "person" : "people"} · 🎄 ${f.event_count} exchange${f.event_count === 1 ? "" : "s"} · joined ${new Date(f.created_at).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" })}</div>
         </div>
         ${mine ? "" : `<button class="small link" data-del="${f.id}">Delete family</button>`}
       </div>
