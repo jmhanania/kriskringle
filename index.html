@@ -104,6 +104,16 @@
       <div id="match"></div>
     </section>
 
+    <section id="santaCard" class="hidden">
+      <h2>💌 Messages from your Kris Kringle <small>You don't know who they are</small></h2>
+      <div id="santaThread"></div>
+      <form id="replyForm" style="margin-top:10px">
+        <div class="field"><label for="replyBody">Your reply</label><textarea id="replyBody" maxlength="500" required placeholder="Type your answer…"></textarea></div>
+        <div class="row" style="margin-top:8px"><button class="primary" type="submit" id="replyBtn">Send reply</button></div>
+      </form>
+      <div id="santaMsg"></div>
+    </section>
+
     <section>
       <h2>🎁 My wish list <small>Your Kris Kringle sees this</small></h2>
       <ul class="list" id="myList"></ul>
@@ -248,17 +258,74 @@ function render() {
       ${recipient.wishlist.length
         ? `<ul class="list">${recipient.wishlist.map(w => wishHtml(w, false)).join("")}</ul>`
         : `<div class="empty">${esc(recipient.name)} hasn't added anything yet. Check back later!</div>`}
+      ${messagingHtml(recipient)}
       <p class="muted" style="margin-top:14px">🤫 Shh, it's a secret!</p>`;
   } else {
     $("match").innerHTML = `<div class="empty">The draw hasn't happened yet. Check back soon! In the meantime, fill in your wish list below 👇</div>`;
   }
 
+  const santa = data.santa_thread || [];
+  $("santaCard").classList.toggle("hidden", !santa.length);
+  $("santaThread").innerHTML = threadHtml(santa, "Your Kris Kringle");
   $("newName").value = me.name;
   $("myList").innerHTML = wishlist.length
     ? wishlist.map(w => wishHtml(w, true)).join("")
     : `<li class="empty">Nothing yet. Add a few ideas so your Kris Kringle knows what to get you!</li>`;
   show("page");
 }
+
+function threadHtml(thread, otherName) {
+  return `<ul class="thread">${thread.map(m => m.kind === "nudge"
+    ? `<li class="nudge">🔔 ${m.from_me ? "You asked them to add gift ideas" : `${esc(otherName)} would love some gift ideas!`}</li>`
+    : `<li class="${m.from_me ? "mine" : "theirs"}"><span class="who">${m.from_me ? "You" : esc(otherName)}</span>${esc(m.body).replace(/\n/g, "<br>")}</li>`).join("")}</ul>`;
+}
+
+function messagingHtml(recipient) {
+  const name = esc(recipient.name);
+  if (!recipient.can_message) return `<p class="muted" style="margin-top:14px">${name} doesn't have an email address, so you can't message them here. Your family's organiser can help if you have questions.</p>`;
+  const nudgedToday = recipient.thread.some(m => m.kind === "nudge" && m.from_me && Date.now() - new Date(m.at) < 864e5);
+  return `<div class="msgbox">
+    ${recipient.wishlist.length ? "" : `<div class="row" style="margin-bottom:10px"><button type="button" id="nudgeBtn" ${nudgedToday ? "disabled" : ""}>${nudgedToday ? "🔔 Nudged today ✓" : `🔔 Nudge ${name} for gift ideas`}</button></div>`}
+    <h3>💬 Ask ${name} a question <span class="muted">(they won't know it's you)</span></h3>
+    ${recipient.thread.length ? threadHtml(recipient.thread, recipient.name) : ""}
+    <form id="askForm">
+      <div class="field"><label for="askBody">Your question</label><textarea id="askBody" maxlength="500" required placeholder="e.g. What size shoes do you wear?"></textarea></div>
+      <div class="row" style="margin-top:8px"><button class="primary" type="submit" id="askBtn">Send anonymously</button></div>
+    </form>
+    <div id="askMsg"></div>
+  </div>`;
+}
+
+// Saves the message, then asks the server to email the other person. The message is kept even if the email fails.
+async function sendAndNotify(saveFn, msgEl) {
+  const id = await saveFn();
+  const { error } = await sb.functions.invoke("notify-message", { body: { message: id } });
+  await loadFamily(familyId);
+  showMsg($(msgEl), error ? "Sent ✓ (but the email notification didn't go out, so they'll see it next time they sign in)" : "Sent ✓ They'll get an email.", "ok");
+}
+
+$("match").addEventListener("submit", async e => {
+  if (e.target.id !== "askForm") return;
+  e.preventDefault();
+  $("askBtn").disabled = true;
+  try { await sendAndNotify(() => rpc("send_message", { p_family: familyId, p_to: "giftee", p_body: $("askBody").value }), "askMsg"); }
+  catch (err) { showMsg($("askMsg"), err.message); $("askBtn").disabled = false; }
+});
+
+$("match").addEventListener("click", async e => {
+  if (e.target.id !== "nudgeBtn") return;
+  e.target.disabled = true;
+  try { await sendAndNotify(() => rpc("send_nudge", { p_family: familyId }), "askMsg"); }
+  catch (err) { showMsg($("askMsg") || $("wishMsg"), err.message); }
+});
+
+$("replyForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("replyBtn").disabled = true;
+  try { await sendAndNotify(() => rpc("send_message", { p_family: familyId, p_to: "santa", p_body: $("replyBody").value }), "santaMsg"); $("replyBody").value = ""; }
+  catch (err) { showMsg($("santaMsg"), err.message); }
+  finally { $("replyBtn").disabled = false; }
+});
 
 function renderFooter() {
   const links = [];

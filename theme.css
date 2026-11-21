@@ -164,3 +164,12 @@ details.account[open] summary { margin-bottom: 12px; }
   .topbar .muted { max-width: 34vw; font-size: 13px; }
   .topbar { gap: 8px; }
 }
+
+/* ---------- Anonymous messages ---------- */
+.msgbox { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); }
+.thread { list-style: none; padding: 0; margin: 8px 0 12px; display: flex; flex-direction: column; gap: 8px; }
+.thread li { max-width: 85%; padding: 8px 12px; border-radius: 12px; background: var(--chip); border: 1px solid var(--line); }
+.thread li.mine { align-self: flex-end; background: color-mix(in srgb, var(--green) 14%, var(--card)); }
+.thread li.theirs { align-self: flex-start; }
+.thread li.nudge { align-self: center; max-width: 100%; background: none; border: none; color: var(--muted); font-size: 14px; }
+.thread .who { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 2px; }

@@ -21,6 +21,9 @@ const ERRORS = {
   cannot_demote_self: "You can't remove your own organiser access.",
   family_full: "This family has reached the 200-person limit.",
   too_many_events: "This family has reached the 100-exchange limit.",
+  no_draw_yet: "The names haven't been drawn yet.",
+  too_many_messages: "That's a lot of messages for one day! Try again tomorrow.",
+  already_nudged: "You've already nudged them today. Give them a little time!",
   last_organiser: "You're this family's only organiser. Make someone else an organiser first (on the organiser page), then try again.",
 };
 
