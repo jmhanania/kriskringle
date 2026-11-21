@@ -444,7 +444,7 @@ function pollHtml(p) {
 function renderBoard() {
   const ex = board.exchange;
   const polls = board.polls.filter(p => p.status === "open" || p.decision != null).slice(0, 5);
-  const posts = showAllPosts ? board.posts : board.posts.slice(0, 3);
+  const posts = showAllPosts ? board.posts : board.posts.slice(0, 2);
   const has = ex?.rules || polls.length || board.posts.length;
   $("boardDot").classList.toggle("hidden", !board.polls.some(p => p.status === "open" && p.my_vote == null));
   if (!has) { $("board").innerHTML = `<p class="empty">Nothing here yet. Your organiser will post updates, polls and house rules here.</p>`; return; }
@@ -458,18 +458,32 @@ function renderBoard() {
       <h3>📣 Updates</h3>
       <ul class="posts">${posts.map(p => `<li>
         <div class="post-meta">${esc(p.author || "Organiser")} · ${new Date(p.at).toLocaleDateString("en-CA", { month: "short", day: "numeric" })}</div>
-        <div>${esc(p.body).replace(/\n/g, "<br>")}</div>
+        <div class="post-body clamped">${esc(p.body).replace(/\n/g, "<br>")}</div>
+        <button class="link inline read-more hidden" data-readmore>Read more</button>
       </li>`).join("")}</ul>
-      ${board.posts.length > 3 ? `<button class="small link" id="morePosts">${showAllPosts ? "Show fewer" : `Show all ${board.posts.length} updates`}</button>` : ""}
+      ${board.posts.length > 2 ? `<button class="small link" id="morePosts">${showAllPosts ? "Show fewer" : `Show all ${board.posts.length} updates`}</button>` : ""}
     </div>` : ""}
     ${polls.length ? `<div class="board-part">
       <h3>🗳️ Polls</h3>
       ${polls.map(pollHtml).join("")}
     </div>` : ""}`;
+  checkReadMore();
+}
+
+// Offer "Read more" only where an update is actually cut off (measurable only while the Board is showing).
+function checkReadMore() {
+  document.querySelectorAll("#board .post-body.clamped").forEach(el => {
+    el.nextElementSibling.classList.toggle("hidden", el.scrollHeight <= el.clientHeight + 2);
+  });
 }
 
 $("board").addEventListener("click", async e => {
   if (e.target.id === "morePosts") { showAllPosts = !showAllPosts; renderBoard(); return; }
+  if (e.target.matches("[data-readmore]")) {
+    const expanded = !e.target.previousElementSibling.classList.toggle("clamped");
+    e.target.textContent = expanded ? "Show less" : "Read more";
+    return;
+  }
   const btn = e.target.closest("[data-vote]");
   if (!btn) return;
   try {
@@ -605,6 +619,7 @@ function setView(v) {
   });
   $("accountLink").classList.toggle("active", v === "account");
   if (location.hash.slice(1) !== v) history.replaceState(null, "", "#" + v);
+  if (v === "board") checkReadMore();
 }
 $("viewTabs").addEventListener("click", e => {
   const v = e.target.closest("[data-view]")?.dataset.view;
