@@ -61,6 +61,24 @@ async function signOut() {
   location.replace("./");
 }
 
+// Fills the shared top bar: My page · Organise · Super admin, plus who's signed in.
+// `active` is "home" | "organise" | "super"; `familyId` picks which family "Organise" opens.
+function renderNav(account, active, familyId) {
+  const fams = account?.families || [];
+  const adminFam = fams.find(f => f.family_id === familyId && f.is_admin) || fams.find(f => f.is_admin);
+  const links = [
+    ["home", "./", "My page"],
+    adminFam && ["organise", `admin.html?f=${adminFam.family_id}`, "Organise"],
+    account?.is_super_admin && ["super", "super.html", "Super admin"],
+  ].filter(Boolean);
+  const nav = document.getElementById("navLinks");
+  if (nav) nav.innerHTML = links.length > 1
+    ? links.map(([key, href, label]) => `<a href="${href}" class="${key === active ? "active" : ""}">${label}</a>`).join("")
+    : "";
+  const who = document.getElementById("whoami");
+  if (who && account?.email) who.textContent = account.email;
+}
+
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const $ = id => document.getElementById(id);
 const siteUrl = () => new URL("./", location.href).href;

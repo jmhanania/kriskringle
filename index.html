@@ -25,8 +25,10 @@
 <body>
 <canvas id="snow"></canvas>
 <nav class="topbar hidden" id="topbar">
+  <a class="brand" href="./">🎅 Kris Kringle</a>
+  <div class="nav-links" id="navLinks"></div>
   <span class="spacer"></span>
-  <span class="muted" id="whoami"></span>
+  <span class="whoami" id="whoami"></span>
   <button class="small link" id="signOut">Sign out</button>
 </nav>
 <main>
@@ -45,22 +47,22 @@
       <div id="authEmailStep">
         <h2 id="authTitle">👋 Sign in</h2>
         <form id="emailForm">
-          <div class="row hidden" id="nameRow"><div class="field"><label for="authName">First name</label><input type="text" id="authName" placeholder="e.g. Sarah" maxlength="80" autocomplete="given-name"></div></div>
-          <div class="row" style="margin-top:8px"><div class="field"><label for="authEmail">Email address</label><input type="email" id="authEmail" placeholder="you@example.com" required autocomplete="email" inputmode="email"></div></div>
-          <div class="row" style="margin-top:10px"><button class="primary" type="submit" id="emailBtn">Email me a sign-in code</button></div>
+          <div class="field hidden" id="nameRow"><label for="authName">First name</label><input type="text" id="authName" placeholder="e.g. Sarah" maxlength="80" autocomplete="given-name"></div>
+          <div class="field"><label for="authEmail">Email address</label><input type="email" id="authEmail" placeholder="you@example.com" required autocomplete="email" inputmode="email"></div>
+          <div class="row"><button class="primary" type="submit" id="emailBtn">Email me a sign-in code</button></div>
         </form>
-        <p class="muted" style="margin:12px 0 0">No password needed. We'll email you a code.
+        <p class="muted mt">No password needed. We'll email you a code.
           <span id="authToggleText">New here?</span> <button class="link inline" id="authToggle">Create an account</button></p>
-        <p class="muted" style="margin:6px 0 0; font-size:13px">See what we store and who can see it: <a href="privacy.html">privacy</a>.</p>
+        <p class="muted">See what we store and who can see it: <a href="privacy.html">privacy</a>.</p>
       </div>
       <div id="authCodeStep" class="hidden">
         <h2>📬 Check your email</h2>
-        <p style="margin:0 0 10px">We sent a code to <strong id="sentTo"></strong>. It's in the email's subject line. Type it below, or tap the button in the email.</p>
+        <p>We sent a code to <strong id="sentTo"></strong>. It's in the email's subject line. Type it below, or tap the button in the email.</p>
         <form id="codeForm">
-          <div class="row"><div class="field"><label for="authCode">Code from the email</label><input type="text" id="authCode" placeholder="123456" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="10" required style="font-size:22px; letter-spacing:6px; text-align:center"></div></div>
-          <div class="row" style="margin-top:10px"><button class="primary" type="submit" id="codeBtn">Sign in</button></div>
+          <div class="field"><label for="authCode">Code from the email</label><input type="text" id="authCode" class="code-input" placeholder="123456" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="10" required></div>
+          <div class="row"><button class="primary" type="submit" id="codeBtn">Sign in</button></div>
         </form>
-        <p class="muted" style="margin:12px 0 0">Not there? Check your spam folder, or <button class="link inline" id="authBack">use a different email</button>.</p>
+        <p class="muted mt">Not there? Check your spam folder, or <button class="link inline" id="authBack">use a different email</button>.</p>
       </div>
       <div id="authMsg"></div>
     </section>
@@ -79,20 +81,20 @@
   <div id="noFamily" class="hidden">
     <section>
       <h2>🎄 Joining your family?</h2>
-      <p style="margin:0">Ask your family's organiser to add <strong class="my-email"></strong> to the family list. As soon as they do, refresh this page and you'll be in.</p>
-      <div class="row" style="margin-top:12px"><button id="refreshBtn">Refresh</button></div>
+      <p>Ask your family's organiser to add <strong class="my-email"></strong> to the family list. As soon as they do, refresh this page and you'll be in.</p>
+      <div class="row"><button id="refreshBtn">Refresh</button></div>
     </section>
   </div>
 
   <section id="startCard" class="hidden">
     <h2>🎅 Start a family</h2>
-    <p style="margin:0 0 10px">You'll be the organiser: add everyone, set any no-go pairs, and run the draw.</p>
+    <p class="hint">You'll be the organiser: add everyone, set any no-go pairs, and run the draw.</p>
     <form id="startForm">
       <div class="row">
         <div class="field"><label for="famName">Family name</label><input type="text" id="famName" placeholder="e.g. Smith" maxlength="60" required></div>
         <div class="field"><label for="myName">Your name</label><input type="text" id="myName" placeholder="e.g. Sarah" maxlength="80" required></div>
       </div>
-      <div class="row" style="margin-top:10px"><button class="primary" type="submit" id="startBtn">Create our Kris Kringle</button></div>
+      <div class="row"><button class="primary" type="submit" id="startBtn">Create our Kris Kringle</button></div>
     </form>
     <div id="startMsg"></div>
   </section>
@@ -101,7 +103,7 @@
   <div id="page" class="hidden">
     <section id="revealCard" class="hidden">
       <h2>🎉 The big reveal</h2>
-      <p style="margin:0">Your Kris Kringle was…</p>
+      <p>Your Kris Kringle was…</p>
       <div class="big" id="mySanta"></div>
     </section>
 
@@ -111,11 +113,11 @@
     </section>
 
     <section id="santaCard" class="hidden">
-      <h2>💌 Messages from your Kris Kringle <small>You don't know who they are</small></h2>
+      <h2>💌 From your Kris Kringle <small>You don't know who they are</small></h2>
       <div id="santaThread"></div>
-      <form id="replyForm" style="margin-top:10px">
+      <form id="replyForm">
         <div class="field"><label for="replyBody">Your reply</label><textarea id="replyBody" maxlength="500" required placeholder="Type your answer…"></textarea></div>
-        <div class="row" style="margin-top:8px"><button class="primary" type="submit" id="replyBtn">Send reply</button></div>
+        <div class="row"><button class="primary" type="submit" id="replyBtn">Send reply</button></div>
       </form>
       <div id="santaMsg"></div>
     </section>
@@ -123,19 +125,16 @@
     <section>
       <h2>🎁 My wish list <small>Your Kris Kringle sees this</small></h2>
       <ul class="list" id="myList"></ul>
+      <hr class="divider">
       <h3 id="formTitle">Add something</h3>
       <form id="wishForm">
         <div class="row">
           <div class="field"><label for="wTitle">Gift idea</label><input type="text" id="wTitle" placeholder="e.g. Cozy socks" maxlength="200" required></div>
           <div class="field narrow"><label for="wPrice">Price (optional)</label><input type="text" id="wPrice" placeholder="$25" inputmode="decimal"></div>
         </div>
-        <div class="row" style="margin-top:8px">
-          <div class="field"><label for="wUrl">Link (optional)</label><input type="text" id="wUrl" placeholder="Paste from Amazon, a store website, etc." maxlength="1000" inputmode="url" autocomplete="off"></div>
-        </div>
-        <div style="margin-top:8px">
-          <div class="field"><label for="wNotes">Notes (optional)</label><textarea id="wNotes" placeholder="Size, colour, where to buy…" maxlength="1000"></textarea></div>
-        </div>
-        <div class="row" style="margin-top:8px">
+        <div class="field"><label for="wUrl">Link (optional)</label><input type="text" id="wUrl" placeholder="Paste from Amazon, a store website, etc." maxlength="1000" inputmode="url" autocomplete="off"></div>
+        <div class="field"><label for="wNotes">Notes (optional)</label><textarea id="wNotes" placeholder="Size, colour, where to buy…" maxlength="1000"></textarea></div>
+        <div class="row">
           <button class="primary" type="submit" id="wSave">Add to my list</button>
           <button type="button" class="hidden" id="wCancel">Cancel</button>
         </div>
@@ -147,26 +146,25 @@
       <details class="account" id="accountBox">
         <summary>⚙️ My account</summary>
         <form id="renameForm">
-          <div class="row">
-            <div class="field"><label for="newName">My name in this family</label><input type="text" id="newName" maxlength="80" required></div>
-          </div>
-          <div class="row" style="margin-top:8px"><button type="submit">Save name</button></div>
+          <div class="field"><label for="newName">My name in this family</label><input type="text" id="newName" maxlength="80" required></div>
+          <div class="row"><button type="submit">Save name</button></div>
         </form>
         <div id="accountMsg"></div>
+        <hr class="divider">
         <h3>Leave or delete</h3>
-        <div class="row">
-          <button type="button" class="link danger" id="leaveBtn">Leave this family</button>
-          <button type="button" class="link danger" id="deleteBtn">Delete my account</button>
+        <p class="hint">Leaving removes you and your wish list from this family. Deleting your account does that for every family you're in. If you're in a draw, it's reset so the organiser can draw again.</p>
+        <div class="actions">
+          <button type="button" class="small danger" id="leaveBtn">Leave this family</button>
+          <button type="button" class="small danger" id="deleteBtn">Delete my account</button>
         </div>
-        <p class="muted" style="margin:8px 0 0">Leaving removes you and your wish list from this family. Deleting your account does that for every family you're in. If you're in a draw, it's reset so the organiser can draw again.</p>
       </details>
     </section>
   </div>
 
   <footer>
     <span id="footLinks"></span>
-    <span class="family-footer">Merry Christmas 🎄</span>
-    <br><a href="privacy.html">Privacy</a>
+    <span class="family-footer">Merry Christmas 🎄</span><br>
+    <a href="privacy.html">Privacy</a>
   </footer>
 </main>
 
@@ -265,17 +263,17 @@ function render() {
   } else if (recipient) {
     const bits = [event.exchange_date && `🗓️ ${prettyDate(event.exchange_date)}`, event.budget_cents != null && `💰 Budget ${money(event.budget_cents)}`].filter(Boolean);
     $("match").innerHTML = `
-      <div class="row" style="justify-content:space-between"><span class="muted">${esc(event.name)}</span><button class="small link" data-hide-secrets>🙈 Hide</button></div>
+      <div class="row between"><span class="muted">${esc(event.name)}</span><button class="small link" data-hide-secrets>🙈 Hide</button></div>
       <div class="big">${esc(recipient.name)}</div>
       ${bits.length ? `<div class="muted">${bits.join(" &nbsp;·&nbsp; ")}</div>` : ""}
       <h3>${esc(recipient.name)}'s wish list</h3>
       ${recipient.wishlist.length
         ? `<ul class="list">${recipient.wishlist.map(giftWishHtml).join("")}</ul>
-           <p class="muted" style="margin:6px 0 0; font-size:13px">✓ Ticks are private: only you can see what you've marked as bought.</p>`
+           <p class="note">✓ Ticks are private: only you can see what you've marked as bought.</p>`
         : `<div class="empty">${esc(recipient.name)} hasn't added anything yet. Check back later!</div>`}
       ${event.revealed ? `<p class="msg ok">🎉 Revealed! ${esc(recipient.name)} can now see it was you.</p>` : ""}
       ${messagingHtml(recipient)}
-      <p class="muted" style="margin-top:14px">🤫 Shh, it's a secret!</p>`;
+      <p class="note mt">🤫 Shh, it's a secret!</p>`;
     if ($("askBody")) $("askBody").value = askDraft;
   } else {
     $("match").innerHTML = `<div class="empty">The draw hasn't happened yet. Check back soon! In the meantime, fill in your wish list below 👇</div>`;
@@ -316,15 +314,16 @@ function threadHtml(thread, otherName) {
 
 function messagingHtml(recipient) {
   const name = esc(recipient.name);
-  if (!recipient.can_message) return `<p class="muted" style="margin-top:14px">${name} doesn't have an email address, so you can't message them here. Your family's organiser can help if you have questions.</p>`;
+  if (!recipient.can_message) return `<p class="note mt">${name} doesn't have an email address, so you can't message them here. Your family's organiser can help if you have questions.</p>`;
   const nudgedToday = recipient.thread.some(m => m.kind === "nudge" && m.from_me && Date.now() - new Date(m.at) < 864e5);
   return `<div class="msgbox">
-    ${recipient.wishlist.length ? "" : `<div class="row" style="margin-bottom:10px"><button type="button" id="nudgeBtn" ${nudgedToday ? "disabled" : ""}>${nudgedToday ? "🔔 Nudged today ✓" : `🔔 Nudge ${name} for gift ideas`}</button></div>`}
-    <h3>💬 Ask ${name} a question <span class="muted">(they won't know it's you)</span></h3>
+    ${recipient.wishlist.length ? "" : `<div class="row"><button type="button" id="nudgeBtn" ${nudgedToday ? "disabled" : ""}>${nudgedToday ? "🔔 Nudged today ✓" : `🔔 Nudge ${name} for gift ideas`}</button></div>`}
+    <h3>💬 Ask ${name} a question</h3>
+    <p class="hint">They won't know it's you.</p>
     ${recipient.thread.length ? threadHtml(recipient.thread, recipient.name) : ""}
     <form id="askForm">
       <div class="field"><label for="askBody">Your question</label><textarea id="askBody" maxlength="500" required placeholder="e.g. What size shoes do you wear?"></textarea></div>
-      <div class="row" style="margin-top:8px"><button class="primary" type="submit" id="askBtn">Send anonymously</button></div>
+      <div class="row"><button class="primary" type="submit" id="askBtn">Send anonymously</button></div>
     </form>
     <div id="askMsg"></div>
   </div>`;
@@ -362,12 +361,8 @@ $("replyForm").addEventListener("submit", async e => {
 });
 
 function renderFooter() {
-  const links = [];
-  const fam = account.families.find(f => f.family_id === familyId);
-  if (fam?.is_admin) links.push(`<a href="admin.html?f=${fam.family_id}">Organise the ${esc(fam.family)} family</a>`);
-  if (account.families.length) links.push(`<a href="#" id="startAnother">Start another family</a>`);
-  if (account.is_super_admin) links.push(`<a href="super.html">Super admin</a>`);
-  $("footLinks").innerHTML = links.length ? links.join(" · ") + "<br>" : "";
+  renderNav(account, "home", familyId);
+  $("footLinks").innerHTML = account.families.length ? `<a href="#" id="startAnother">Start another family</a> · ` : "";
   $("startAnother")?.addEventListener("click", e => { e.preventDefault(); show("startCard"); $("startCard").scrollIntoView({ behavior: "smooth" }); });
 }
 

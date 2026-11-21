@@ -17,79 +17,81 @@
 <body>
 <canvas id="snow"></canvas>
 <nav class="topbar" id="topbar">
-  <a href="./" class="small">← My page</a>
+  <a class="brand" href="./">🎅 Kris Kringle</a>
+  <div class="nav-links" id="navLinks"></div>
   <span class="spacer"></span>
-  <span class="muted" id="whoami"></span>
+  <span class="whoami" id="whoami"></span>
   <button class="small link" id="signOut">Sign out</button>
 </nav>
 <main>
-  <header>
-    <div class="lights" aria-hidden="true"><span>🔴</span><span>🟡</span><span>🟢</span><span>🔵</span><span>🔴</span><span>🟡</span><span>🟢</span></div>
-    <h1><span class="family family-name"></span>Kris Kringle Generator</h1>
-    <p class="sub">Organiser page: add the family, set the rules, run the draw.</p>
+  <header class="compact">
+    <h1><span class="family family-name"></span>Organiser</h1>
+    <p class="sub">Add the family, set the rules, run the draw.</p>
   </header>
 
   <div id="error"></div>
 
   <div id="app" class="hidden">
     <section>
-      <h2><span>👨‍👩‍👧‍👦 The family <small id="famCount"></small></span><button class="small link" id="renameFamily">Rename family</button></h2>
-      <p class="muted" style="margin:0 0 10px">Add each person's email. When they create an account with that email, they'll join automatically. Leave email blank for kids or anyone without one, and you can manage their wish list for them.</p>
+      <h2><span>👨‍👩‍👧‍👦 The family <small id="famCount"></small></span><button class="small link" id="renameFamily">Rename</button></h2>
+      <div id="famMsg"></div>
+      <ul class="list" id="family"></ul>
+      <hr class="divider">
+      <h3 id="personFormTitle">Add someone</h3>
+      <p class="hint">With an email, they get an invite and join automatically when they sign up. Leave it blank for kids or anyone without email, and you can keep their wish list for them.</p>
       <form id="personForm">
         <div class="row">
           <div class="field"><label for="pName">Name</label><input type="text" id="pName" placeholder="e.g. Grandma Rose" maxlength="80" required></div>
-          <div class="field"><label for="pEmail">Email (so they can sign in)</label><input type="email" id="pEmail" placeholder="Leave blank if they don't have one" maxlength="200"></div>
+          <div class="field"><label for="pEmail">Email (optional)</label><input type="email" id="pEmail" placeholder="name@example.com" maxlength="200"></div>
         </div>
-        <div class="row" style="margin-top:8px">
-          <button type="submit" id="pSave">Add person</button>
+        <div class="row">
+          <button type="submit" class="primary" id="pSave">Add person</button>
           <button type="button" class="hidden" id="pCancel">Cancel</button>
         </div>
       </form>
-      <div id="famMsg"></div>
-      <ul class="list" id="family"></ul>
     </section>
 
     <section id="managedCard" class="hidden">
-      <h2><span>🎁 <span id="managedName"></span>'s wish list</span><button class="small link" id="managedClose">Done</button></h2>
-      <p class="muted" style="margin:0 0 10px">They don't have an account, so organisers keep this list for them.</p>
+      <h2><span>🎁 <span id="managedName"></span>'s wish list</span><button class="small" id="managedClose">Done</button></h2>
+      <p class="hint">They don't have an account, so organisers keep this list for them.</p>
       <ul class="list" id="managedList"></ul>
-      <form id="managedForm" style="margin-top:10px">
+      <hr class="divider">
+      <form id="managedForm">
         <div class="row">
           <div class="field"><label for="mTitle">Gift idea</label><input type="text" id="mTitle" placeholder="e.g. Lego set" maxlength="200" required></div>
           <div class="field narrow"><label for="mPrice">Price (optional)</label><input type="text" id="mPrice" placeholder="$25" inputmode="decimal"></div>
         </div>
-        <div class="row" style="margin-top:8px"><div class="field"><label for="mUrl">Link (optional)</label><input type="text" id="mUrl" placeholder="Paste from a store website" maxlength="1000" inputmode="url" autocomplete="off"></div></div>
-        <div class="row" style="margin-top:8px"><button type="submit" id="mSave">Add</button></div>
+        <div class="field"><label for="mUrl">Link (optional)</label><input type="text" id="mUrl" placeholder="Paste from a store website" maxlength="1000" inputmode="url" autocomplete="off"></div>
+        <div class="row"><button type="submit" class="primary" id="mSave">Add idea</button></div>
       </form>
       <div id="managedMsg"></div>
     </section>
 
     <section>
-      <h2>🎄 Kris Kringle exchange</h2>
+      <h2>🎄 Exchange</h2>
       <div class="row">
-        <select id="eventSelect"></select>
+        <div class="field"><label for="eventSelect">Exchange</label><select id="eventSelect"></select></div>
         <button id="newEvent">+ New exchange</button>
       </div>
 
-      <form id="eventForm" class="hidden" style="margin-top:12px">
+      <form id="eventForm" class="hidden mt">
         <div class="row">
           <div class="field"><label for="eName">Exchange name</label><input type="text" id="eName" placeholder="e.g. Christmas 2026" maxlength="100" required></div>
           <div class="field narrow"><label for="eDate">Gift day (optional)</label><input type="date" id="eDate"></div>
           <div class="field narrow"><label for="eBudget">Budget (optional)</label><input type="text" id="eBudget" placeholder="$50" inputmode="decimal"></div>
         </div>
-        <div class="row" style="margin-top:8px">
-          <div class="field"><label for="eReveal">Reveal who had who</label>
-            <select id="eReveal">
-              <option value="after_date">Automatically, the day after gift day</option>
-              <option value="manual">When I press "Reveal"</option>
-            </select>
-          </div>
+        <div class="field"><label for="eReveal">Reveal who had who</label>
+          <select id="eReveal">
+            <option value="after_date">Automatically, the day after gift day</option>
+            <option value="manual">When I press "Reveal"</option>
+          </select>
         </div>
-        <div style="margin-top:8px"><label class="check"><input type="checkbox" id="eReminders" checked> Send reminder emails (a week before to anyone with an empty wish list, and 2 days before to everyone)</label></div>
-        <div class="row" style="margin-top:8px">
+        <label class="check"><input type="checkbox" id="eReminders" checked> Send reminder emails (a week before to anyone with an empty wish list, and 2 days before to everyone)</label>
+        <div class="row">
           <button type="submit" class="primary" id="eSave">Save</button>
           <button type="button" id="eCancel">Cancel</button>
-          <button type="button" class="link" id="eDelete">Delete this exchange</button>
+          <span class="spacer"></span>
+          <button type="button" class="link danger" id="eDelete">Delete this exchange</button>
         </div>
       </form>
 
@@ -192,29 +194,48 @@ function render() {
 function renderFamily() {
   const joined = state.people.filter(p => p.has_account).length;
   $("famCount").textContent = `${state.people.length} ${state.people.length === 1 ? "person" : "people"} · ${joined} joined`;
-  $("family").innerHTML = state.people.map(p => `
-    <li>
-      <div style="flex:1 1 220px">
-        <strong>${esc(p.name)}</strong>${p.is_admin ? ` <span class="muted">(organiser)</span>` : ""}
-        <div class="muted">${p.email ? esc(p.email) + " · " : ""}🎁 ${p.wish_count} wish${p.wish_count === 1 ? "" : "es"}</div>
-        <div style="margin-top:4px">${statusOf(p)}</div>
+  $("family").innerHTML = state.people.map(p => {
+    const canInvite = p.email && !p.has_account;
+    const isMe = p.id === state.admin_id;
+    // One visible action per person; everything else lives in the ⋯ menu.
+    const main = canInvite
+      ? `<button class="small" data-act="sendInvite" data-id="${p.id}" ${invitedRecently(p) ? "disabled title=\"You can resend an hour after the last invite\"" : ""}>${p.invited_at ? (invitedRecently(p) ? "Invite sent ✓" : "Resend invite") : "Send invite"}</button>`
+      : !p.has_account ? `<button class="small" data-act="wishes" data-id="${p.id}">Wish list</button>` : "";
+    const more = [
+      canInvite && `<button data-act="copyInvite" data-id="${p.id}">Copy invite message</button>`,
+      canInvite && `<button data-act="wishes" data-id="${p.id}">Edit their wish list</button>`,
+      `<button data-act="edit" data-id="${p.id}">Edit name or email</button>`,
+      !isMe && `<button data-act="toggleAdmin" data-id="${p.id}">${p.is_admin ? "Remove as organiser" : "Make organiser"}</button>`,
+      !isMe && `<button data-act="remove" data-id="${p.id}" class="danger">Remove from family</button>`,
+    ].filter(Boolean).join("");
+    return `
+    <li class="person">
+      <div class="grow">
+        <div class="name">${esc(p.name)}${p.is_admin ? ` <span class="muted">· organiser</span>` : ""}${isMe ? ` <span class="muted">(you)</span>` : ""}</div>
+        <div class="meta">${p.email ? esc(p.email) + " · " : ""}🎁 ${p.wish_count} wish${p.wish_count === 1 ? "" : "es"}</div>
+        ${statusOf(p)}
       </div>
       <div class="actions">
-        ${p.email && !p.has_account ? `<button class="small" data-act="sendInvite" data-id="${p.id}" ${invitedRecently(p) ? "disabled title=\"You can resend an hour after the last invite\"" : ""}>${p.invited_at ? (invitedRecently(p) ? "Invite sent ✓" : "Resend invite") : "Send invite"}</button>` : ""}
-        ${p.email && !p.has_account ? `<button class="small" data-act="copyInvite" data-id="${p.id}">Copy invite</button>` : ""}
-        ${!p.has_account ? `<button class="small" data-act="wishes" data-id="${p.id}">Wish list</button>` : ""}
-        <button class="small" data-act="edit" data-id="${p.id}">Edit</button>
-        ${p.id === state.admin_id ? "" : `<button class="small link" data-act="toggleAdmin" data-id="${p.id}">${p.is_admin ? "Remove organiser" : "Make organiser"}</button>`}
-        ${p.id === state.admin_id ? "" : `<button class="small link" data-act="remove" data-id="${p.id}">Remove</button>`}
+        ${main}
+        <details class="menu"><summary aria-label="More actions for ${esc(p.name)}">⋯</summary><div class="menu-pop">${more}</div></details>
       </div>
-    </li>`).join("");
+    </li>`;
+  }).join("");
 }
+
+// Close any open ⋯ menu when clicking elsewhere, or after choosing an item.
+document.addEventListener("click", e => {
+  document.querySelectorAll("details.menu[open]").forEach(d => {
+    if (!d.contains(e.target) || e.target.closest(".menu-pop button")) d.open = false;
+  });
+});
 
 function resetPersonForm() {
   editingPersonId = null;
   $("personForm").reset();
   $("pEmail").disabled = false;
   $("pSave").textContent = "Add person";
+  $("personFormTitle").textContent = "Add someone";
   $("pCancel").classList.add("hidden");
 }
 
@@ -261,6 +282,8 @@ $("family").addEventListener("click", async e => {
       $("pName").value = p.name; $("pEmail").value = p.email || "";
       $("pEmail").disabled = p.has_account;   // their email is their login now
       $("pSave").textContent = "Save changes"; $("pCancel").classList.remove("hidden");
+      $("personFormTitle").textContent = `Edit ${p.name}`;
+      $("personForm").scrollIntoView({ behavior: "smooth", block: "center" });
       $("pName").focus();
     } else if (btn.dataset.act === "sendInvite") {
       btn.disabled = true; btn.textContent = "Sending…";
@@ -340,7 +363,7 @@ function renderEvents() {
   if (editingEvent !== null) { $("eventBody").innerHTML = ""; return; }
 
   if (!ev) {
-    $("eventBody").innerHTML = `<div class="empty">Create an exchange to get started, e.g. "Christmas ${new Date().getFullYear()}".</div>`;
+    $("eventBody").innerHTML = `<p class="empty mt">Create an exchange to get started, e.g. "Christmas ${new Date().getFullYear()}".</p>`;
     return;
   }
 
@@ -351,56 +374,58 @@ function renderEvents() {
     ev.reminders ? "🔔 Reminders on" : "🔕 Reminders off"].filter(Boolean).join(" · ");
 
   $("eventBody").innerHTML = `
-    <div class="row" style="margin-top:12px; justify-content:space-between">
+    <div class="row between mt">
       <span class="muted">${details || "No date or budget set"}</span>
       <button class="small" id="editEvent">Edit details</button>
     </div>
 
-    <h3>Who's in? <span class="muted">(${partList.length} selected)</span></h3>
+    <hr class="divider">
+    <h3>👥 Who's in? <small class="muted">${partList.length} selected</small></h3>
     <div class="chips">
       ${state.people.map(p => `<label class="chip"><input type="checkbox" data-part="${p.id}" ${parts.has(p.id) ? "checked" : ""}> ${esc(p.name)}</label>`).join("") || `<span class="empty">Add family members above first.</span>`}
     </div>
-    <div class="row" style="margin-top:8px"><button class="small link" id="selAll">Select everyone</button></div>
+    <div class="row mt"><button class="small" id="selAll">Select everyone</button></div>
 
+    <hr class="divider">
     <h3>🚫 No-go pairs</h3>
-    <div class="row">
-      <select id="ruleA"><option value="">Person…</option>${partList.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join("")}</select>
-      <select id="ruleB"><option value="">can't draw…</option>${partList.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join("")}</select>
-      <button id="addRule">Add rule</button>
+    <p class="hint">People who shouldn't draw each other, like couples.</p>
+    <div class="stack">
+      <div class="row">
+        <div class="field"><label for="ruleA">Person</label><select id="ruleA"><option value="">Choose…</option>${partList.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join("")}</select></div>
+        <div class="field"><label for="ruleB">Can't draw</label><select id="ruleB"><option value="">Choose…</option>${partList.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join("")}</select></div>
+        <button id="addRule">Add rule</button>
+      </div>
+      <label class="check"><input type="checkbox" id="ruleBoth" checked> Applies both ways (couples)</label>
     </div>
-    <div style="margin-top:6px"><label class="check"><input type="checkbox" id="ruleBoth" checked> Applies both ways (couples)</label></div>
-    <ul class="list">${groupRules(ev.exclusions).map((r, i) => `
-      <li><span>${esc(nameOf(r.a))} ${r.both ? "⇄" : "→"} ${esc(nameOf(r.b))} <span class="muted">${r.both ? "(won't draw each other)" : "(can't draw)"}</span></span>
-      <button class="small link" data-rule="${i}">Remove</button></li>`).join("") || `<li class="empty">No restrictions.</li>`}
+    <ul class="list mt">${groupRules(ev.exclusions).map((r, i) => `
+      <li><span>${esc(nameOf(r.a))} ${r.both ? "⇄" : "→"} ${esc(nameOf(r.b))} <span class="muted">${r.both ? "won't draw each other" : "can't draw"}</span></span>
+      <button class="small link" data-rule="${i}">Remove</button></li>`).join("") || `<li class="empty">No restrictions yet.</li>`}
     </ul>
 
+    <hr class="divider">
     <h3>🎅 The draw</h3>
-    ${prev ? `<label class="check" style="margin-bottom:10px"><input type="checkbox" id="avoidPrev" checked> Avoid repeating matches from ${esc(prev.name)}</label>` : ""}
-    <div class="row">
-      <button class="${ev.status === "drawn" ? "" : "primary"}" id="shake">${ev.status === "drawn" ? "Reshuffle the Santa hat" : "Shake the Santa hat"}</button>
-      ${ev.status === "drawn" ? `<button class="link" id="clearDraw">Clear draw</button>` : ""}
-    </div>
-    ${ev.status === "drawn" ? drawHtml(ev) : ""}
+    ${ev.status === "drawn" ? drawHtml(ev) : `
+      <div class="stack">
+        ${prev ? `<label class="check"><input type="checkbox" id="avoidPrev" checked> Avoid repeating matches from ${esc(prev.name)}</label>` : ""}
+        <div class="row"><button class="primary" id="shake">Shake the Santa hat</button></div>
+      </div>`}
   `;
 }
 
 function drawHtml(ev) {
   const rows = [...ev.assignments].sort((a, b) => nameOf(a.giver).localeCompare(nameOf(b.giver)));
   const waiting = rows.map(a => personById(a.giver)).filter(p => p && !p.has_account);
+  const prev = previousDrawn(ev);
   return `
-    <div class="msg ok">✅ Drawn! Everyone with an account can now sign in and see their match.</div>
-    <div class="row" style="margin-top:10px">
-      <button class="primary" id="notifyBtn">📧 Email everyone that names are drawn</button>
+    <div class="stack">
+      <div class="msg ok">✅ Drawn! Everyone with an account can sign in and see their match.</div>
+      <div class="row"><button class="primary" id="notifyBtn">📧 Email everyone that names are drawn</button></div>
+      <p class="note">One email each. It doesn't say who they got, only to sign in and look.</p>
+      ${waiting.length ? `<p class="muted">Not signed up yet: ${waiting.map(p => esc(p.name)).join(", ")}.${waiting.some(p => !p.email) ? " For anyone without an account, peek below and tell them in person." : ""}</p>` : ""}
     </div>
-    <p class="muted" style="margin:6px 0 0">Sends one email to each person with an email address. It doesn't say who they got, only to sign in and look.</p>
-    <h3>🎉 Reveal</h3>
-    ${ev.revealed
-      ? `<p class="msg ok" style="margin:0 0 8px">Revealed! Everyone can now see who had them.</p><button class="small" id="hideReveal">Hide it again</button>`
-      : `<p class="muted" style="margin:0 0 8px">${ev.reveal_mode === "after_date" && ev.exchange_date
-          ? `Reveals automatically the day after ${prettyDate(ev.exchange_date)}.`
-          : ev.reveal_mode === "after_date" ? "Set a gift day to reveal automatically, or reveal it yourself." : "Reveals when you press the button."}</p>
-         <button id="revealNow">🎉 Reveal who had who now</button>`}
-    ${waiting.length ? `<p class="muted">Not signed up yet: ${waiting.map(p => esc(p.name)).join(", ")}. ${waiting.some(p => !p.email) ? "For anyone without an account, peek below and let them know in person." : ""}</p>` : ""}
+
+    <h3>🤫 Who has who</h3>
+    <p class="hint">Hidden so you can join in too. Only peek if you need to.</p>
     <table>${rows.map(a => {
       const p = personById(a.giver);
       const show = revealed.has(a.giver);
@@ -408,10 +433,24 @@ function drawHtml(ev) {
         <td><strong>${esc(p.name)}</strong></td>
         <td class="arrow">→</td>
         <td>${show ? esc(nameOf(a.receiver)) : `<button class="small link" data-reveal="${a.giver}">•••••• peek</button>`}</td>
-        <td style="text-align:right">${statusOf(p)}</td>
+        <td class="status">${statusOf(p)}</td>
       </tr>`;
     }).join("")}</table>
-    <p class="muted">Matches stay hidden here so you can join in too. Only peek if you need to.</p>`;
+
+    <h3>🎉 Reveal</h3>
+    ${ev.revealed
+      ? `<div class="stack"><div class="msg ok">Revealed! Everyone can now see who had them.</div><div class="row"><button class="small" id="hideReveal">Hide it again</button></div></div>`
+      : `<p class="hint">${ev.reveal_mode === "after_date" && ev.exchange_date
+          ? `Reveals automatically the day after ${prettyDate(ev.exchange_date)}.`
+          : ev.reveal_mode === "after_date" ? "Set a gift day to reveal automatically, or reveal it yourself." : "Reveals when you press the button."}</p>
+         <div class="row"><button id="revealNow">🎉 Reveal who had who now</button></div>`}
+
+    <h3>Start over</h3>
+    <p class="hint">Only if nobody has looked yet: everyone's match will change.</p>
+    <div class="stack">
+      ${prev ? `<label class="check"><input type="checkbox" id="avoidPrev" checked> Avoid repeating matches from ${esc(prev.name)}</label>` : ""}
+      <div class="actions"><button class="small" id="shake">Reshuffle the Santa hat</button><button class="small link danger" id="clearDraw">Clear draw</button></div>
+    </div>`;
 }
 
 // The most recent other exchange that has a draw, older than this one in list order.
@@ -579,6 +618,7 @@ $("signOut").addEventListener("click", signOut);
   const user = await requireUser();
   $("whoami").textContent = user.email;
   if (!familyId) { location.replace("./"); return; }
+  rpc("my_account").then(acc => renderNav(acc, "organise", familyId)).catch(() => {});
   try { await load(); }
   catch (e) { showMsg($("error"), e.message); }
 })();

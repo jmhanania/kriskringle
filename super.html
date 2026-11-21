@@ -17,15 +17,15 @@
 <body>
 <canvas id="snow"></canvas>
 <nav class="topbar">
-  <a href="./" class="small">← My page</a>
+  <a class="brand" href="./">🎅 Kris Kringle</a>
+  <div class="nav-links" id="navLinks"></div>
   <span class="spacer"></span>
-  <span class="muted" id="whoami"></span>
+  <span class="whoami" id="whoami"></span>
   <button class="small link" id="signOut">Sign out</button>
 </nav>
 <main>
-  <header>
-    <div class="lights" aria-hidden="true"><span>🔴</span><span>🟡</span><span>🟢</span><span>🔵</span><span>🔴</span><span>🟡</span><span>🟢</span></div>
-    <h1><span class="family">Super admin</span>Kris Kringle Generator</h1>
+  <header class="compact">
+    <h1><span class="family">Kris Kringle</span>Super admin</h1>
     <p class="sub">Every family on the site. Their draws and wish lists aren't shown here.</p>
   </header>
 
@@ -33,8 +33,8 @@
 
   <section id="backupCard" class="hidden">
     <h2>💾 Backup</h2>
-    <p style="margin:0 0 10px">The free database has no automatic backups. Download one now and then (say, after each draw) and keep it somewhere safe, like your Google Drive.</p>
-    <p class="muted" style="margin:0 0 10px">⚠️ The file contains <strong>everything</strong>, including every family's draws, wish lists and emails. Keep it private and don't open it unless you need to restore something.</p>
+    <p>The free database has no automatic backups. Download one now and then (say, after each draw) and keep it somewhere safe, like your Google Drive.</p>
+    <p class="hint">⚠️ The file contains <strong>everything</strong>, including every family's draws, wish lists and emails. Keep it private and don't open it unless you need to restore something.</p>
     <div class="row"><button id="backupBtn">Download backup</button></div>
     <div id="backupMsg"></div>
   </section>
@@ -59,20 +59,18 @@ async function load() {
   const n = state.families.length;
   $("famCount").textContent = `${n} ${n === 1 ? "family" : "families"}`;
   $("families").innerHTML = state.families.map(f => `
-    <li style="display:block">
-      <div class="row" style="justify-content:space-between">
-        <div>
-          <strong>${esc(f.name)}</strong>${f.mine ? ` <span class="muted">(you're in this one)</span>` : ""}
-          <div class="muted">👥 ${f.people_count} ${f.people_count === 1 ? "person" : "people"} (${f.account_count} signed up) · 🎄 ${f.event_count} exchange${f.event_count === 1 ? "" : "s"} · started ${new Date(f.created_at).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" })}</div>
-          <div class="muted">Organisers: ${f.admins.map(a => `${esc(a.name)}${a.email ? ` (${esc(a.email)})` : ""}`).join(", ") || "none"}</div>
+    <li class="person">
+        <div class="grow">
+          <div class="name">${esc(f.name)}${f.mine ? ` <span class="muted">· you're in this one</span>` : ""}</div>
+          <div class="meta">👥 ${f.people_count} ${f.people_count === 1 ? "person" : "people"} (${f.account_count} signed up) · 🎄 ${f.event_count} exchange${f.event_count === 1 ? "" : "s"} · started ${new Date(f.created_at).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" })}</div>
+          <div class="meta">Organisers: ${f.admins.map(a => `${esc(a.name)}${a.email ? ` (${esc(a.email)})` : ""}`).join(", ") || "none"}</div>
           ${f.admins.length ? "" : f.candidates.length
-            ? `<div class="row" style="margin-top:6px"><span class="badge">⚠️ No organiser</span>
+            ? `<div class="row mt"><span class="badge warn">⚠️ No organiser</span>
                  <select data-cand="${f.id}">${f.candidates.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select>
                  <button class="small" data-promote="${f.id}">Make organiser</button></div>`
-            : `<div style="margin-top:6px"><span class="badge">⚠️ No organiser, and nobody has an account yet</span></div>`}
+            : `<span class="badge warn">⚠️ No organiser, and nobody has an account yet</span>`}
         </div>
-        <button class="small link" data-del="${f.id}">Delete family</button>
-      </div>
+        <button class="small link danger" data-del="${f.id}">Delete</button>
     </li>`).join("") || `<li class="empty">No families yet.</li>`;
   $("app").classList.remove("hidden");
   $("backupCard").classList.remove("hidden");
@@ -116,6 +114,7 @@ $("signOut").addEventListener("click", signOut);
 (async () => {
   const user = await requireUser();
   $("whoami").textContent = user.email;
+  rpc("my_account").then(acc => renderNav(acc, "super", null)).catch(() => {});
   try { await load(); } catch (err) { showMsg($("error"), err.message); }
 })();
 </script>
