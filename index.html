@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Hanania Kris Kringle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=Lora:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+</head>
+<body>
+<canvas id="snow"></canvas>
+<main>
+  <header>
+    <div class="lights" aria-hidden="true"><span>🔴</span><span>🟡</span><span>🟢</span><span>🔵</span><span>🔴</span><span>🟡</span><span>🟢</span></div>
+    <h1><span class="family">The Hanania</span>Kris Kringle</h1>
+    <p class="sub" id="greeting">Loading your page…</p>
+  </header>
+
+  <div id="error"></div>
+
+  <div id="page" class="hidden">
+    <section>
+      <h2>🎅 You're buying for…</h2>
+      <div id="match"></div>
+    </section>
+
+    <section>
+      <h2>🎁 My wish list <small>Your Kris Kringle sees this</small></h2>
+      <ul class="list" id="myList"></ul>
+      <h3 id="formTitle">Add something</h3>
+      <form id="wishForm">
+        <div class="row">
+          <input type="text" id="wTitle" placeholder="What would you like?" maxlength="200" required>
+          <input type="text" id="wPrice" placeholder="Approx. price ($)" inputmode="decimal" style="flex:0 1 150px">
+        </div>
+        <div class="row" style="margin-top:8px">
+          <input type="url" id="wUrl" placeholder="Link (optional), e.g. https://www.amazon.ca/…" maxlength="1000">
+        </div>
+        <div style="margin-top:8px">
+          <textarea id="wNotes" placeholder="Notes: size, colour, where to buy… (optional)" maxlength="1000"></textarea>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button class="primary" type="submit" id="wSave">Add to my list</button>
+          <button type="button" class="hidden" id="wCancel">Cancel</button>
+        </div>
+      </form>
+      <div id="wishMsg"></div>
+    </section>
+  </div>
+
+  <footer>
+    <span id="adminLink"></span>
+    Merry Christmas from the Hananias 🎄
+  </footer>
+</main>
+
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+const code = codeFromHash();
+let data = null;
+let editingId = null;
+
+function wishHtml(w, editable) {
+  const url = safeUrl(w.url);
+  const title = url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(w.title)} ↗</a>` : esc(w.title);
+  return `<li>
+    <div style="flex:1 1 260px">
+      <div class="wish-title">${title}${w.price_cents != null ? ` <span class="muted">· ~${money(w.price_cents)}</span>` : ""}</div>
+      ${w.notes ? `<div class="muted">${esc(w.notes)}</div>` : ""}
+    </div>
+    ${editable ? `<div class="actions"><button class="small" data-edit="${w.id}">Edit</button><button class="small link" data-del="${w.id}">Remove</button></div>` : ""}
+  </li>`;
+}
+
+function render() {
+  const { me, wishlist, event, recipient } = data;
+  $("greeting").textContent = `Hi ${me.name}! 🎄`;
+  document.title = `${me.name} · Hanania Kris Kringle`;
+
+  if (recipient) {
+    const bits = [event.exchange_date && `🗓️ ${prettyDate(event.exchange_date)}`, event.budget_cents != null && `💰 Budget ${money(event.budget_cents)}`].filter(Boolean);
+    $("match").innerHTML = `
+      <div class="muted">${esc(event.name)}</div>
+      <div class="big">${esc(recipient.name)}</div>
+      ${bits.length ? `<div class="muted">${bits.join(" &nbsp;·&nbsp; ")}</div>` : ""}
+      <h3>${esc(recipient.name)}'s wish list</h3>
+      ${recipient.wishlist.length
+        ? `<ul class="list">${recipient.wishlist.map(w => wishHtml(w, false)).join("")}</ul>`
+        : `<div class="empty">${esc(recipient.name)} hasn't added anything yet. Check back later!</div>`}
+      <p class="muted" style="margin-top:14px">🤫 Shh, it's a secret!</p>`;
+  } else {
+    $("match").innerHTML = `<div class="empty">The draw hasn't happened yet. Check back soon! In the meantime, fill in your wish list below 👇</div>`;
+  }
+
+  $("myList").innerHTML = wishlist.length
+    ? wishlist.map(w => wishHtml(w, true)).join("")
+    : `<li class="empty">Nothing yet. Add a few ideas so your Kris Kringle knows what to get you!</li>`;
+
+  $("adminLink").innerHTML = me.is_admin ? `<a href="admin.html#${encodeURIComponent(code)}">Admin page</a> · ` : "";
+  $("page").classList.remove("hidden");
+}
+
+async function load() {
+  if (!code) {
+    $("greeting").textContent = "Welcome!";
+    showMsg($("error"), "Open this page using the personal link you were sent. Each person has their own.");
+    return;
+  }
+  try {
+    data = await rpc("get_my_page", { p_code: code });
+    render();
+  } catch (e) {
+    $("greeting").textContent = "Hmm…";
+    showMsg($("error"), e.message);
+  }
+}
+
+function resetForm() {
+  editingId = null;
+  $("wishForm").reset();
+  $("formTitle").textContent = "Add something";
+  $("wSave").textContent = "Add to my list";
+  $("wCancel").classList.add("hidden");
+}
+
+$("wishForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const url = $("wUrl").value.trim();
+  if (url && !safeUrl(url)) { showMsg($("wishMsg"), "Links need to start with http:// or https://"); return; }
+  $("wSave").disabled = true;
+  try {
+    await rpc("save_wish", {
+      p_code: code, p_id: editingId, p_title: $("wTitle").value,
+      p_url: url || null, p_notes: $("wNotes").value || null,
+      p_price_cents: $("wPrice").value.trim() ? toCents($("wPrice").value) : null,
+    });
+    showMsg($("wishMsg"), editingId ? "Updated ✓" : "Added to your list ✓", "ok");
+    resetForm();
+    await load();
+  } catch (err) {
+    showMsg($("wishMsg"), err.message);
+  } finally {
+    $("wSave").disabled = false;
+  }
+});
+
+$("wCancel").addEventListener("click", () => { resetForm(); showMsg($("wishMsg"), ""); });
+
+$("myList").addEventListener("click", async e => {
+  const editId = e.target.dataset.edit, delId = e.target.dataset.del;
+  if (editId) {
+    const w = data.wishlist.find(x => x.id === editId);
+    editingId = w.id;
+    $("wTitle").value = w.title; $("wUrl").value = w.url || ""; $("wNotes").value = w.notes || "";
+    $("wPrice").value = w.price_cents != null ? (w.price_cents / 100).toString() : "";
+    $("formTitle").textContent = "Edit item";
+    $("wSave").textContent = "Save changes";
+    $("wCancel").classList.remove("hidden");
+    $("wTitle").focus();
+  }
+  if (delId) {
+    const w = data.wishlist.find(x => x.id === delId);
+    if (!confirm(`Remove "${w.title}" from your list?`)) return;
+    try {
+      await rpc("delete_wish", { p_code: code, p_id: delId });
+      if (editingId === delId) resetForm();
+      await load();
+    } catch (err) { showMsg($("wishMsg"), err.message); }
+  }
+});
+
+addEventListener("hashchange", () => location.reload());
+load();
+</script>
+</body>
+</html>
