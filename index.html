@@ -7,11 +7,11 @@
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f3b2c">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kris Kringle Generator</title>
+<title>Kris Kringle</title>
 <meta name="description" content="Secret Santa draws and wish lists for the whole family.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kriskringle.jacobhanania.com/">
-<meta property="og:title" content="Kris Kringle Generator 🎅">
+<meta property="og:title" content="Kris Kringle 🎅">
 <meta property="og:description" content="Secret Santa draws and wish lists for the whole family. Create an account, see who you're buying for, and share your wish list.">
 <meta property="og:image" content="https://kriskringle.jacobhanania.com/og-image.png">
 <meta property="og:image:width" content="1200">
@@ -495,7 +495,7 @@ async function boot() {
   const user = await currentUser();
   if (!user) {
     setFamily("", "");
-    document.title = "Kris Kringle Generator";
+    document.title = "Kris Kringle";
     show("signedOut");
     return;
   }
