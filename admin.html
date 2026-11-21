@@ -351,7 +351,7 @@ function renderEvents() {
     <h3>🎅 The draw</h3>
     ${prev ? `<label class="check" style="margin-bottom:10px"><input type="checkbox" id="avoidPrev" checked> Avoid repeating matches from ${esc(prev.name)}</label>` : ""}
     <div class="row">
-      <button class="primary" id="shake">${ev.status === "drawn" ? "Reshuffle the Santa hat" : "Shake the Santa hat"}</button>
+      <button class="${ev.status === "drawn" ? "" : "primary"}" id="shake">${ev.status === "drawn" ? "Reshuffle the Santa hat" : "Shake the Santa hat"}</button>
       ${ev.status === "drawn" ? `<button class="link" id="clearDraw">Clear draw</button>` : ""}
     </div>
     ${ev.status === "drawn" ? drawHtml(ev) : ""}

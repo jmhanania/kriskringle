@@ -158,3 +158,9 @@ button.link.inline { padding: 0; min-height: 0; color: var(--accent); text-decor
 details.account summary { cursor: pointer; font-weight: 600; }
 details.account[open] summary { margin-bottom: 12px; }
 .danger { color: var(--accent) !important; }
+
+/* Keep "Sign out" on the same line as the email on phones */
+@media (max-width: 600px) {
+  .topbar .muted { max-width: 34vw; font-size: 13px; }
+  .topbar { gap: 8px; }
+}
