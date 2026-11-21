@@ -37,8 +37,8 @@
       <div id="authEmailStep">
         <h2 id="authTitle">👋 Sign in</h2>
         <form id="emailForm">
-          <div class="row hidden" id="nameRow"><input type="text" id="authName" placeholder="Your first name" maxlength="80" autocomplete="given-name"></div>
-          <div class="row" style="margin-top:8px"><input type="email" id="authEmail" placeholder="Your email address" required autocomplete="email" inputmode="email"></div>
+          <div class="row hidden" id="nameRow"><div class="field"><label for="authName">First name</label><input type="text" id="authName" placeholder="e.g. Sarah" maxlength="80" autocomplete="given-name"></div></div>
+          <div class="row" style="margin-top:8px"><div class="field"><label for="authEmail">Email address</label><input type="email" id="authEmail" placeholder="you@example.com" required autocomplete="email" inputmode="email"></div></div>
           <div class="row" style="margin-top:10px"><button class="primary" type="submit" id="emailBtn">Email me a sign-in code</button></div>
         </form>
         <p class="muted" style="margin:12px 0 0">No password needed. We'll email you a code.
@@ -48,7 +48,7 @@
         <h2>📬 Check your email</h2>
         <p style="margin:0 0 10px">We sent a code to <strong id="sentTo"></strong>. It's in the email's subject line. Type it below, or tap the button in the email.</p>
         <form id="codeForm">
-          <div class="row"><input type="text" id="authCode" placeholder="Code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="10" required style="font-size:22px; letter-spacing:6px; text-align:center"></div>
+          <div class="row"><div class="field"><label for="authCode">Code from the email</label><input type="text" id="authCode" placeholder="123456" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="10" required style="font-size:22px; letter-spacing:6px; text-align:center"></div></div>
           <div class="row" style="margin-top:10px"><button class="primary" type="submit" id="codeBtn">Sign in</button></div>
         </form>
         <p class="muted" style="margin:12px 0 0">Not there? Check your spam folder, or <button class="link inline" id="authBack">use a different email</button>.</p>
@@ -80,8 +80,8 @@
     <p style="margin:0 0 10px">You'll be the organiser: add everyone, set any no-go pairs, and run the draw.</p>
     <form id="startForm">
       <div class="row">
-        <input type="text" id="famName" placeholder="Family name, e.g. Smith" maxlength="60" required>
-        <input type="text" id="myName" placeholder="Your name" maxlength="80" required>
+        <div class="field"><label for="famName">Family name</label><input type="text" id="famName" placeholder="e.g. Smith" maxlength="60" required></div>
+        <div class="field"><label for="myName">Your name</label><input type="text" id="myName" placeholder="e.g. Sarah" maxlength="80" required></div>
       </div>
       <div class="row" style="margin-top:10px"><button class="primary" type="submit" id="startBtn">Create our Kris Kringle</button></div>
     </form>
@@ -101,14 +101,14 @@
       <h3 id="formTitle">Add something</h3>
       <form id="wishForm">
         <div class="row">
-          <input type="text" id="wTitle" placeholder="What would you like?" maxlength="200" required>
-          <input type="text" id="wPrice" placeholder="Approx. price ($)" inputmode="decimal" style="flex:0 1 150px">
+          <div class="field"><label for="wTitle">Gift idea</label><input type="text" id="wTitle" placeholder="e.g. Cozy socks" maxlength="200" required></div>
+          <div class="field narrow"><label for="wPrice">Price (optional)</label><input type="text" id="wPrice" placeholder="$25" inputmode="decimal"></div>
         </div>
         <div class="row" style="margin-top:8px">
-          <input type="text" id="wUrl" placeholder="Link (optional): paste from Amazon, a store website, etc." maxlength="1000" inputmode="url" autocomplete="off">
+          <div class="field"><label for="wUrl">Link (optional)</label><input type="text" id="wUrl" placeholder="Paste from Amazon, a store website, etc." maxlength="1000" inputmode="url" autocomplete="off"></div>
         </div>
         <div style="margin-top:8px">
-          <textarea id="wNotes" placeholder="Notes: size, colour, where to buy… (optional)" maxlength="1000"></textarea>
+          <div class="field"><label for="wNotes">Notes (optional)</label><textarea id="wNotes" placeholder="Size, colour, where to buy…" maxlength="1000"></textarea></div>
         </div>
         <div class="row" style="margin-top:8px">
           <button class="primary" type="submit" id="wSave">Add to my list</button>
@@ -116,6 +116,25 @@
         </div>
       </form>
       <div id="wishMsg"></div>
+    </section>
+
+    <section>
+      <details class="account" id="accountBox">
+        <summary>⚙️ My account</summary>
+        <form id="renameForm">
+          <div class="row">
+            <div class="field"><label for="newName">My name in this family</label><input type="text" id="newName" maxlength="80" required></div>
+          </div>
+          <div class="row" style="margin-top:8px"><button type="submit">Save name</button></div>
+        </form>
+        <div id="accountMsg"></div>
+        <h3>Leave or delete</h3>
+        <div class="row">
+          <button type="button" class="link danger" id="leaveBtn">Leave this family</button>
+          <button type="button" class="link danger" id="deleteBtn">Delete my account</button>
+        </div>
+        <p class="muted" style="margin:8px 0 0">Leaving removes you and your wish list from this family. Deleting your account does that for every family you're in. If you're in a draw, it's reset so the organiser can draw again.</p>
+      </details>
     </section>
   </div>
 
@@ -125,7 +144,7 @@
   </footer>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script src="common.js"></script>
 <script>
@@ -224,6 +243,7 @@ function render() {
     $("match").innerHTML = `<div class="empty">The draw hasn't happened yet. Check back soon! In the meantime, fill in your wish list below 👇</div>`;
   }
 
+  $("newName").value = me.name;
   $("myList").innerHTML = wishlist.length
     ? wishlist.map(w => wishHtml(w, true)).join("")
     : `<li class="empty">Nothing yet. Add a few ideas so your Kris Kringle knows what to get you!</li>`;
@@ -297,6 +317,32 @@ $("myList").addEventListener("click", async e => {
   }
 });
 
+$("renameForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  try {
+    await rpc("update_my_name", { p_family: familyId, p_name: $("newName").value });
+    account.families.find(f => f.family_id === familyId).name = $("newName").value.trim();
+    await loadFamily(familyId);
+    showMsg($("accountMsg"), "Name saved ✓", "ok");
+  } catch (err) { showMsg($("accountMsg"), err.message); }
+});
+
+$("leaveBtn").addEventListener("click", async () => {
+  if (!confirm(`Leave the ${data.family} family? Your wish list there will be deleted.`)) return;
+  try { await rpc("leave_family", { p_family: familyId }); try { localStorage.removeItem(FAMILY_KEY); } catch {} await boot(); }
+  catch (err) { showMsg($("accountMsg"), err.message); }
+});
+
+$("deleteBtn").addEventListener("click", async () => {
+  const typed = prompt(`This permanently deletes your account (${account.email}), removes you from every family, and deletes your wish lists. It can't be undone.
+
+Type DELETE to confirm:`);
+  if (typed === null) return;
+  if (typed.trim().toUpperCase() !== "DELETE") { showMsg($("accountMsg"), "You didn't type DELETE, so nothing was deleted."); return; }
+  try { await rpc("delete_my_account"); await signOut(); }
+  catch (err) { showMsg($("accountMsg"), err.message); }
+});
+
 $("familySwitch").addEventListener("change", e => { resetForm(); showMsg($("wishMsg"), ""); loadFamily(e.target.value).then(renderFooter); });
 
 // ---------- Boot ----------
@@ -311,12 +357,13 @@ async function boot() {
     return;
   }
 
+  // Show Sign out first, so an error below never leaves someone stuck.
+  $("whoami").textContent = user.email;
+  show("topbar");
   try { account = await rpc("my_account"); }
   catch (err) { showMsg($("error"), err.message); return; }
 
-  $("whoami").textContent = account.email;
   document.querySelectorAll(".my-email").forEach(el => el.textContent = account.email);
-  show("topbar");
   $("myName").value = user.user_metadata?.name || "";
 
   if (!account.families.length) {

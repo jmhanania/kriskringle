@@ -21,6 +21,7 @@ const ERRORS = {
   cannot_demote_self: "You can't remove your own organiser access.",
   family_full: "This family has reached the 200-person limit.",
   too_many_events: "This family has reached the 100-exchange limit.",
+  last_organiser: "You're this family's only organiser. Make someone else an organiser first (on the organiser page), then try again.",
 };
 
 async function rpc(fn, args = {}) {

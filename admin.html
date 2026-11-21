@@ -37,8 +37,8 @@
       <p class="muted" style="margin:0 0 10px">Add each person's email. When they create an account with that email, they'll join automatically. Leave email blank for kids or anyone without one, and you can manage their wish list for them.</p>
       <form id="personForm">
         <div class="row">
-          <input type="text" id="pName" placeholder="Name" maxlength="80" required>
-          <input type="email" id="pEmail" placeholder="Email (so they can sign in)" maxlength="200">
+          <div class="field"><label for="pName">Name</label><input type="text" id="pName" placeholder="e.g. Grandma Rose" maxlength="80" required></div>
+          <div class="field"><label for="pEmail">Email (so they can sign in)</label><input type="email" id="pEmail" placeholder="Leave blank if they don't have one" maxlength="200"></div>
         </div>
         <div class="row" style="margin-top:8px">
           <button type="submit" id="pSave">Add person</button>
@@ -55,10 +55,10 @@
       <ul class="list" id="managedList"></ul>
       <form id="managedForm" style="margin-top:10px">
         <div class="row">
-          <input type="text" id="mTitle" placeholder="Gift idea" maxlength="200" required>
-          <input type="text" id="mPrice" placeholder="Approx. price ($)" inputmode="decimal" style="flex:0 1 150px">
+          <div class="field"><label for="mTitle">Gift idea</label><input type="text" id="mTitle" placeholder="e.g. Lego set" maxlength="200" required></div>
+          <div class="field narrow"><label for="mPrice">Price (optional)</label><input type="text" id="mPrice" placeholder="$25" inputmode="decimal"></div>
         </div>
-        <div class="row" style="margin-top:8px"><input type="text" id="mUrl" placeholder="Link (optional)" maxlength="1000" inputmode="url" autocomplete="off"></div>
+        <div class="row" style="margin-top:8px"><div class="field"><label for="mUrl">Link (optional)</label><input type="text" id="mUrl" placeholder="Paste from a store website" maxlength="1000" inputmode="url" autocomplete="off"></div></div>
         <div class="row" style="margin-top:8px"><button type="submit" id="mSave">Add</button></div>
       </form>
       <div id="managedMsg"></div>
@@ -73,9 +73,9 @@
 
       <form id="eventForm" class="hidden" style="margin-top:12px">
         <div class="row">
-          <input type="text" id="eName" placeholder="Name, e.g. Christmas 2026" maxlength="100" required>
-          <input type="date" id="eDate" style="flex:0 1 170px">
-          <input type="text" id="eBudget" placeholder="Budget ($)" inputmode="decimal" style="flex:0 1 120px">
+          <div class="field"><label for="eName">Exchange name</label><input type="text" id="eName" placeholder="e.g. Christmas 2026" maxlength="100" required></div>
+          <div class="field narrow"><label for="eDate">Gift day (optional)</label><input type="date" id="eDate"></div>
+          <div class="field narrow"><label for="eBudget">Budget (optional)</label><input type="text" id="eBudget" placeholder="$50" inputmode="decimal"></div>
         </div>
         <div class="row" style="margin-top:8px">
           <button type="submit" class="primary" id="eSave">Save</button>
@@ -92,7 +92,7 @@
   <footer><span class="family-footer"></span></footer>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script src="common.js"></script>
 <script>
@@ -108,6 +108,10 @@ const revealed = new Set();
 const personById = id => state.people.find(p => p.id === id);
 const nameOf = id => personById(id)?.name ?? "(removed)";
 const selected = () => state.events.find(e => e.id === selectedId);
+
+function inviteText(p) {
+  return `Hi ${p.name}! 🎄 I've added you to our family Kris Kringle. Create an account at ${siteUrl()} using ${p.email} and you'll be in. You'll see who you're buying for once the names are drawn, and you can add your own wish list.`;
+}
 
 function inviteMail(p) {
   const subject = `Join the ${state.family} family Kris Kringle 🎄`;
@@ -182,6 +186,7 @@ function renderFamily() {
       </div>
       <div class="actions">
         ${p.email && !p.has_account ? `<a class="btn small" href="${inviteMail(p)}">Invite</a>` : ""}
+        ${p.email && !p.has_account ? `<button class="small" data-act="copyInvite" data-id="${p.id}">Copy invite</button>` : ""}
         ${!p.has_account ? `<button class="small" data-act="wishes" data-id="${p.id}">Wish list</button>` : ""}
         <button class="small" data-act="edit" data-id="${p.id}">Edit</button>
         ${p.id === state.admin_id ? "" : `<button class="small link" data-act="toggleAdmin" data-id="${p.id}">${p.is_admin ? "Remove organiser" : "Make organiser"}</button>`}
@@ -205,7 +210,7 @@ $("personForm").addEventListener("submit", async e => {
     const editing = editingPersonId;
     await rpc("admin_save_person", {
       p_family: familyId, p_id: editing, p_name: $("pName").value,
-      p_email: $("pEmail").value || null, p_phone: null,
+      p_email: $("pEmail").value || null,
     });
     const name = $("pName").value.trim(), email = $("pEmail").value.trim();
     showMsg($("famMsg"), editing ? "Saved ✓" : email
@@ -237,6 +242,10 @@ $("family").addEventListener("click", async e => {
       $("pEmail").disabled = p.has_account;   // their email is their login now
       $("pSave").textContent = "Save changes"; $("pCancel").classList.remove("hidden");
       $("pName").focus();
+    } else if (btn.dataset.act === "copyInvite") {
+      await navigator.clipboard.writeText(inviteText(p));
+      btn.textContent = "Copied!"; setTimeout(() => btn.textContent = "Copy invite", 1500);
+      showMsg($("famMsg"), `Invite message copied. Paste it into a text, WhatsApp or email to ${p.name}.`, "ok");
     } else if (btn.dataset.act === "wishes") {
       openManaged(p);
     } else if (btn.dataset.act === "toggleAdmin") {
@@ -354,6 +363,10 @@ function drawHtml(ev) {
   const waiting = rows.map(a => personById(a.giver)).filter(p => p && !p.has_account);
   return `
     <div class="msg ok">✅ Drawn! Everyone with an account can now sign in and see their match.</div>
+    <div class="row" style="margin-top:10px">
+      <button class="primary" id="notifyBtn">📧 Email everyone that names are drawn</button>
+    </div>
+    <p class="muted" style="margin:6px 0 0">Sends one email to each person with an email address. It doesn't say who they got, only to sign in and look.</p>
     ${waiting.length ? `<p class="muted">Not signed up yet: ${waiting.map(p => esc(p.name)).join(", ")}. ${waiting.some(p => !p.email) ? "For anyone without an account, peek below and let them know in person." : ""}</p>` : ""}
     <table>${rows.map(a => {
       const p = personById(a.giver);
@@ -463,6 +476,23 @@ $("eventBody").addEventListener("click", async e => {
     saveSetup(ev, ev.participants, rules); return;
   }
   if (t.dataset.reveal) { revealed.add(t.dataset.reveal); renderEvents(); return; }
+  if (t.id === "notifyBtn") {
+    const withEmail = ev.participants.map(personById).filter(p => p?.email);
+    if (!withEmail.length) { showMsg($("eventMsg"), "Nobody in this exchange has an email address."); return; }
+    if (!confirm(`Email ${withEmail.length} ${withEmail.length === 1 ? "person" : "people"} that the names are drawn?`)) return;
+    t.disabled = true; t.textContent = "Sending…";
+    const { data, error } = await sb.functions.invoke("notify-draw", { body: { family: familyId, event: ev.id } });
+    if (error) {
+      let msg = error.message;
+      try { msg = (await error.context.json()).error || msg; } catch {}
+      showMsg($("eventMsg"), `Couldn't send the emails: ${msg}`);
+      t.disabled = false; t.textContent = "📧 Email everyone that names are drawn";
+      return;
+    }
+    t.textContent = `✓ Emailed ${data.sent} ${data.sent === 1 ? "person" : "people"}`;
+    showMsg($("eventMsg"), `📧 Sent! ${data.sent} ${data.sent === 1 ? "email is" : "emails are"} on the way.`, "ok");
+    return;
+  }
   if (t.id === "clearDraw") {
     if (!confirm("Clear this draw? People will see \"the draw hasn't happened yet\" until you draw again.")) return;
     try { await rpc("admin_clear_draw", { p_family: familyId, p_event: ev.id }); revealed.clear(); await load(); }

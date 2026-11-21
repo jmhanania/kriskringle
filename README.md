@@ -32,4 +32,9 @@ Supabase project **Hanania Family** (Canada Central), using Supabase Auth with e
 
 Tables can't be read directly. Signed-in users can only call database functions, each of which checks the caller's membership and role in the family they're asking about. Signed-out visitors can't call anything. The publishable key in `config.js` is safe to make public.
 
-> Free Supabase projects pause after ~7 days without visits. If the site stops working, open the Supabase dashboard and click **Restore**.
+## Keeping it running
+
+- **Keep-awake:** a daily GitHub Action (`.github/workflows/keep-awake.yml`) pings the database so the free project never pauses for inactivity.
+- **Backups:** the free plan has none, so the super admin page has a **Download backup** button. The file contains everything, including draws and wish lists, so keep it private.
+- **Emails:** sign-in codes and "names are drawn" notifications go out through Resend from `kriskringle@jacobhanania.com`. The free plan allows 100 per day.
+- **Draw notifications:** sent by the `notify-draw` Supabase Edge Function (`supabase/functions/notify-draw`), which needs a `RESEND_API_KEY` secret.

@@ -26,10 +26,18 @@
   <header>
     <div class="lights" aria-hidden="true"><span>🔴</span><span>🟡</span><span>🟢</span><span>🔵</span><span>🔴</span><span>🟡</span><span>🟢</span></div>
     <h1><span class="family">Super admin</span>Kris Kringle Generator</h1>
-    <p class="sub">Every family on the site. Their draws and wish lists stay private, even from here.</p>
+    <p class="sub">Every family on the site. Their draws and wish lists aren't shown here.</p>
   </header>
 
   <div id="error"></div>
+
+  <section id="backupCard" class="hidden">
+    <h2>💾 Backup</h2>
+    <p style="margin:0 0 10px">The free database has no automatic backups. Download one now and then (say, after each draw) and keep it somewhere safe, like your Google Drive.</p>
+    <p class="muted" style="margin:0 0 10px">⚠️ The file contains <strong>everything</strong>, including every family's draws, wish lists and emails. Keep it private and don't open it unless you need to restore something.</p>
+    <div class="row"><button id="backupBtn">Download backup</button></div>
+    <div id="backupMsg"></div>
+  </section>
 
   <section id="app" class="hidden">
     <h2>🏡 Families <small id="famCount"></small></h2>
@@ -40,7 +48,7 @@
   <footer>Merry Christmas 🎄</footer>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script src="common.js"></script>
 <script>
@@ -57,14 +65,39 @@ async function load() {
           <strong>${esc(f.name)}</strong>${f.mine ? ` <span class="muted">(you're in this one)</span>` : ""}
           <div class="muted">👥 ${f.people_count} ${f.people_count === 1 ? "person" : "people"} (${f.account_count} signed up) · 🎄 ${f.event_count} exchange${f.event_count === 1 ? "" : "s"} · started ${new Date(f.created_at).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" })}</div>
           <div class="muted">Organisers: ${f.admins.map(a => `${esc(a.name)}${a.email ? ` (${esc(a.email)})` : ""}`).join(", ") || "none"}</div>
+          ${f.admins.length ? "" : f.candidates.length
+            ? `<div class="row" style="margin-top:6px"><span class="badge">⚠️ No organiser</span>
+                 <select data-cand="${f.id}">${f.candidates.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select>
+                 <button class="small" data-promote="${f.id}">Make organiser</button></div>`
+            : `<div style="margin-top:6px"><span class="badge">⚠️ No organiser, and nobody has an account yet</span></div>`}
         </div>
         <button class="small link" data-del="${f.id}">Delete family</button>
       </div>
     </li>`).join("") || `<li class="empty">No families yet.</li>`;
   $("app").classList.remove("hidden");
+  $("backupCard").classList.remove("hidden");
 }
 
+$("backupBtn").addEventListener("click", async () => {
+  try {
+    const data = await rpc("super_export");
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `kriskringle-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    showMsg($("backupMsg"), `Backup downloaded ✓ (${data.families.length} families, ${data.people.length} people).`, "ok");
+  } catch (err) { showMsg($("backupMsg"), err.message); }
+});
+
 $("families").addEventListener("click", async e => {
+  const fam = e.target.dataset.promote;
+  if (fam) {
+    const person = document.querySelector(`select[data-cand="${fam}"]`).value;
+    try { await rpc("super_set_organiser", { p_family: fam, p_person: person }); await load(); showMsg($("famMsg"), "Organiser added ✓", "ok"); }
+    catch (err) { showMsg($("famMsg"), err.message); }
+    return;
+  }
   const id = e.target.dataset.del;
   if (!id) return;
   const f = state.families.find(x => x.id === id);

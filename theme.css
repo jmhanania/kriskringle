@@ -148,3 +148,13 @@ button.link.inline { padding: 0; min-height: 0; color: var(--accent); text-decor
   .topbar select { flex-basis: 100%; order: 3; }
   button.link.inline { min-height: 0; }
 }
+
+/* ---------- Labelled fields ---------- */
+.field { display: flex; flex-direction: column; gap: 4px; flex: 1 1 160px; min-width: 0; }
+.field > label { font-size: 13px; font-weight: 600; color: var(--muted); }
+.field > input, .field > select, .field > textarea { flex: 0 0 auto !important; width: 100%; }
+.field.narrow { flex: 0 1 150px; }
+@media (max-width: 600px) { .field, .field.narrow { flex-basis: 100%; } }
+details.account summary { cursor: pointer; font-weight: 600; }
+details.account[open] summary { margin-bottom: 12px; }
+.danger { color: var(--accent) !important; }
