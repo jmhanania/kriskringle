@@ -39,7 +39,7 @@ Tables can't be read directly. Signed-in users can only call database functions,
 - **Emails:** sign-in codes and "names are drawn" notifications go out through Resend from `kriskringle@jacobhanania.com`. The free plan allows 100 per day.
 - **Draw notifications:** sent by the `notify-draw` Supabase Edge Function (`supabase/functions/notify-draw`), which needs a `RESEND_API_KEY` secret.
 - **Anonymous messages:** questions, replies and nudges are emailed by the `notify-message` edge function.
-- **Family board:** organisers post updates and run polls (votes are private, only totals are shown) and set house rules per exchange. Updates and polls can be emailed to the family by the `notify-family` edge function.
+- **Family board:** organisers post updates and run polls (votes are private; only organisers see totals) and set house rules per exchange. Updates and polls can be emailed to the family by the `notify-family` edge function.
 - **No-reply:** every email comes from `kriskringle@jacobhanania.com`, which can't receive replies, and says so in its footer (including the two Supabase sign-in templates).
 - **Reminders:** a daily `pg_cron` job (9am Toronto) calls the `send-reminders` edge function, which emails anyone with an empty wish list a week before gift day, and everyone 2 days before. Each reminder goes out once per exchange; organisers can switch them off per exchange.
 

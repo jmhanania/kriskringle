@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
     ? `<p style="margin:0 0 12px">${esc(d.author)} wants to know what everyone thinks:</p>
        <p style="margin:0 0 8px;font-size:18px;font-weight:bold">${esc(d.content.question)}</p>
        <ul style="margin:0 0 12px;padding-left:20px">${(d.content.options as string[]).map(o => `<li>${esc(o)}</li>`).join("")}</ul>
-       <p style="margin:0 0 12px;color:#7a6a5c">Votes are private: everyone sees the totals, not who picked what.</p>`
+       <p style="margin:0 0 12px;color:#7a6a5c">Your vote is private: nobody sees who picked what.</p>`
     : `<p style="margin:0 0 12px">${esc(d.author)} posted an update:</p>
        <blockquote style="margin:0 0 12px;padding:10px 14px;border-left:4px solid #d4a64a;background:#fffaf0">${esc(d.content.body).replace(/\n/g, "<br>")}</blockquote>`;
 
