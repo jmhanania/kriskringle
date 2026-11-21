@@ -122,15 +122,21 @@ function inviteText(p) {
   return `Hi ${p.name}! 🎄 I've added you to our family Kris Kringle. Create an account at ${siteUrl()} using ${p.email} and you'll be in. You'll see who you're buying for once the names are drawn, and you can add your own wish list.`;
 }
 
-function inviteMail(p) {
-  const subject = `Join the ${state.family} family Kris Kringle 🎄`;
-  const body = `Hi ${p.name}! 🎄\n\nI've added you to our family Kris Kringle. Create an account at ${siteUrl()} using this email address (${p.email}) and you'll be in. You'll see who you're buying for once the names are drawn, and you can add your own wish list.`;
-  return `mailto:${encodeURIComponent(p.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+const invitedRecently = p => p.invited_at && Date.now() - new Date(p.invited_at) < 36e5;
+
+// Emails an invitation from Kris Kringle. Returns an error message, or null on success.
+async function sendInvite(personId) {
+  const { error } = await sb.functions.invoke("send-invite", { body: { family: familyId, person: personId } });
+  if (!error) return null;
+  let msg = error.message;
+  try { msg = (await error.context.json()).error || msg; } catch {}
+  return ERRORS[msg] || msg;
 }
 
 function statusOf(p) {
   if (p.has_account) return `<span class="badge ok">✓ Joined</span>`;
-  if (p.email) return `<span class="badge">Waiting to sign up</span>`;
+  if (p.email && p.invited_at) return `<span class="badge">✉️ Invited ${new Date(p.invited_at).toLocaleDateString("en-CA", { month: "short", day: "numeric" })} · waiting to sign up</span>`;
+  if (p.email) return `<span class="badge">Not invited yet</span>`;
   return `<span class="badge">No account · you manage their list</span>`;
 }
 
@@ -194,7 +200,7 @@ function renderFamily() {
         <div style="margin-top:4px">${statusOf(p)}</div>
       </div>
       <div class="actions">
-        ${p.email && !p.has_account ? `<a class="btn small" href="${inviteMail(p)}">Invite</a>` : ""}
+        ${p.email && !p.has_account ? `<button class="small" data-act="sendInvite" data-id="${p.id}" ${invitedRecently(p) ? "disabled title=\"You can resend an hour after the last invite\"" : ""}>${p.invited_at ? (invitedRecently(p) ? "Invite sent ✓" : "Resend invite") : "Send invite"}</button>` : ""}
         ${p.email && !p.has_account ? `<button class="small" data-act="copyInvite" data-id="${p.id}">Copy invite</button>` : ""}
         ${!p.has_account ? `<button class="small" data-act="wishes" data-id="${p.id}">Wish list</button>` : ""}
         <button class="small" data-act="edit" data-id="${p.id}">Edit</button>
@@ -217,14 +223,19 @@ $("personForm").addEventListener("submit", async e => {
   $("pSave").disabled = true;
   try {
     const editing = editingPersonId;
-    await rpc("admin_save_person", {
+    const id = await rpc("admin_save_person", {
       p_family: familyId, p_id: editing, p_name: $("pName").value,
       p_email: $("pEmail").value || null,
     });
     const name = $("pName").value.trim(), email = $("pEmail").value.trim();
-    showMsg($("famMsg"), editing ? "Saved ✓" : email
-      ? `Added ${name} ✓ They'll join as soon as they create an account with ${email}. Use "Invite" to let them know.`
-      : `Added ${name} ✓ Use "Wish list" to add gift ideas for them.`, "ok");
+    if (editing) showMsg($("famMsg"), "Saved ✓", "ok");
+    else if (!email) showMsg($("famMsg"), `Added ${name} ✓ Use "Wish list" to add gift ideas for them.`, "ok");
+    else {
+      const err = await sendInvite(id);
+      showMsg($("famMsg"), err
+        ? `Added ${name} ✓ but the invite email didn't send (${err}). Try "Send invite" again later, or use "Copy invite".`
+        : `Added ${name} ✓ and emailed them an invite. They'll join as soon as they create an account with ${email}.`, err ? "err" : "ok");
+    }
     resetPersonForm();
     await load();
     $("pName").focus();
@@ -251,6 +262,11 @@ $("family").addEventListener("click", async e => {
       $("pEmail").disabled = p.has_account;   // their email is their login now
       $("pSave").textContent = "Save changes"; $("pCancel").classList.remove("hidden");
       $("pName").focus();
+    } else if (btn.dataset.act === "sendInvite") {
+      btn.disabled = true; btn.textContent = "Sending…";
+      const err = await sendInvite(p.id);
+      await load();
+      showMsg($("famMsg"), err ? `Couldn't send the invite: ${err}` : `✉️ Invite emailed to ${p.name} (${p.email}).`, err ? "err" : "ok");
     } else if (btn.dataset.act === "copyInvite") {
       await navigator.clipboard.writeText(inviteText(p));
       btn.textContent = "Copied!"; setTimeout(() => btn.textContent = "Copy invite", 1500);

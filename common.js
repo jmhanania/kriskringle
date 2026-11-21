@@ -24,6 +24,9 @@ const ERRORS = {
   no_draw_yet: "The names haven't been drawn yet.",
   too_many_messages: "That's a lot of messages for one day! Try again tomorrow.",
   already_nudged: "You've already nudged them today. Give them a little time!",
+  invited_recently: "They were invited less than an hour ago. Give it a little time before resending.",
+  already_joined: "They've already created their account.",
+  no_email: "Add an email address for them first.",
   last_organiser: "You're this family's only organiser. Make someone else an organiser first (on the organiser page), then try again.",
 };
 

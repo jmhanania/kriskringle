@@ -58,9 +58,10 @@ Deno.serve(async (req) => {
       `<p style="margin:0 0 12px">Hi ${esc(m.to_name)},</p><p style="margin:0 0 12px">Whoever is buying for you in the ${esc(m.family)} family Kris Kringle asked:</p>${quote(m.body)}<p style="margin:0">Reply on the site. You won't find out who asked, and that's half the fun!</p>`,
       signIn);
   } else {
-    subject = `💌 ${m.giftee_name} replied to your question`;
-    html = wrap(`💌 ${esc(m.giftee_name)} replied`,
-      `<p style="margin:0 0 12px">Hi ${esc(m.to_name)},</p><p style="margin:0 0 12px">${esc(m.giftee_name)} answered your Kris Kringle question:</p>${quote(m.body)}`,
+    // No giftee name anywhere: notifications can show up on a lock screen next to the giftee.
+    subject = "💌 Your giftee replied to your question";
+    html = wrap("💌 Your giftee replied",
+      `<p style="margin:0 0 12px">Hi ${esc(m.to_name)},</p><p style="margin:0 0 12px">The person you're buying for answered your Kris Kringle question:</p>${quote(m.body)}`,
       "See the conversation");
   }
 

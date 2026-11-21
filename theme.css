@@ -177,3 +177,13 @@ details.account[open] summary { margin-bottom: 12px; }
 /* ---------- Bought ticks ---------- */
 .list > li.bought .wish-title { text-decoration: line-through; opacity: .6; }
 .bought-box { margin-left: auto; }
+
+/* ---------- Hidden-until-tapped details ---------- */
+.gate { text-align: center; padding: 10px 0 4px; }
+.gate-gift { font-size: 48px; line-height: 1; margin-bottom: 10px; }
+.gate .muted { margin: 10px auto 0; max-width: 420px; font-size: 13px; }
+
+/* ---------- Family tabs ---------- */
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: -8px 0 20px; }
+.tabs .tab { background: rgba(255,255,255,.08); color: #fff8e6; border-color: rgba(255,255,255,.25); border-radius: 999px; }
+.tabs .tab.active { background: var(--gold); color: #2a1f1a; border-color: var(--gold); font-weight: 600; }

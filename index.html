@@ -25,7 +25,6 @@
 <body>
 <canvas id="snow"></canvas>
 <nav class="topbar hidden" id="topbar">
-  <select id="familySwitch" class="hidden" aria-label="Switch family"></select>
   <span class="spacer"></span>
   <span class="muted" id="whoami"></span>
   <button class="small link" id="signOut">Sign out</button>
@@ -38,6 +37,7 @@
   </header>
 
   <div id="error"></div>
+  <nav id="familyTabs" class="tabs hidden" aria-label="Your families"></nav>
 
   <!-- Signed out -->
   <div id="signedOut" class="hidden">
@@ -254,10 +254,18 @@ function render() {
   $("greeting").textContent = `Hi ${me.name}! 🎄`;
   setFamily(data.family, me.name);
 
-  if (recipient) {
+  const askDraft = $("askBody")?.value || "";
+  if (recipient && !secretsShown) {
+    $("match").innerHTML = `
+      <div class="gate">
+        <div class="gate-gift" aria-hidden="true">🎁</div>
+        <button class="primary" data-show-secrets>Tap to see who you're buying for</button>
+        <p class="muted">Kept hidden in case someone's looking at your screen. It hides again when you leave the page.</p>
+      </div>`;
+  } else if (recipient) {
     const bits = [event.exchange_date && `🗓️ ${prettyDate(event.exchange_date)}`, event.budget_cents != null && `💰 Budget ${money(event.budget_cents)}`].filter(Boolean);
     $("match").innerHTML = `
-      <div class="muted">${esc(event.name)}</div>
+      <div class="row" style="justify-content:space-between"><span class="muted">${esc(event.name)}</span><button class="small link" data-hide-secrets>🙈 Hide</button></div>
       <div class="big">${esc(recipient.name)}</div>
       ${bits.length ? `<div class="muted">${bits.join(" &nbsp;·&nbsp; ")}</div>` : ""}
       <h3>${esc(recipient.name)}'s wish list</h3>
@@ -268,6 +276,7 @@ function render() {
       ${event.revealed ? `<p class="msg ok">🎉 Revealed! ${esc(recipient.name)} can now see it was you.</p>` : ""}
       ${messagingHtml(recipient)}
       <p class="muted" style="margin-top:14px">🤫 Shh, it's a secret!</p>`;
+    if ($("askBody")) $("askBody").value = askDraft;
   } else {
     $("match").innerHTML = `<div class="empty">The draw hasn't happened yet. Check back soon! In the meantime, fill in your wish list below 👇</div>`;
   }
@@ -276,7 +285,9 @@ function render() {
   $("mySanta").textContent = data.my_santa ? `${data.my_santa}! 🎁` : "";
   const santa = data.santa_thread || [];
   $("santaCard").classList.toggle("hidden", !santa.length);
-  $("santaThread").innerHTML = threadHtml(santa, "Your Kris Kringle");
+  $("santaThread").innerHTML = secretsShown ? threadHtml(santa, "Your Kris Kringle")
+    : `<button data-show-secrets>💌 Tap to read ${santa.length === 1 ? "1 message" : `${santa.length} messages`}</button>`;
+  $("replyForm").classList.toggle("hidden", !secretsShown);
   $("newName").value = me.name;
   $("myList").innerHTML = wishlist.length
     ? wishlist.map(w => wishHtml(w, true)).join("")
@@ -359,6 +370,27 @@ function renderFooter() {
   $("footLinks").innerHTML = links.length ? links.join(" · ") + "<br>" : "";
   $("startAnother")?.addEventListener("click", e => { e.preventDefault(); show("startCard"); $("startCard").scrollIntoView({ behavior: "smooth" }); });
 }
+
+// ---------- Keep the secret details hidden until asked for ----------
+let secretsShown = false, hideTimer = null;
+const typingDraft = () => !!($("askBody")?.value.trim() || $("replyBody").value.trim());
+
+function setSecrets(show) {
+  secretsShown = show;
+  clearTimeout(hideTimer);
+  // Hide again after 2 minutes, unless they're in the middle of writing a message.
+  if (show) hideTimer = setTimeout(function autoHide() {
+    if (typingDraft()) { hideTimer = setTimeout(autoHide, 60e3); return; }
+    setSecrets(false);
+  }, 120e3);
+  if (data) render();
+}
+document.addEventListener("click", e => {
+  if (e.target.closest("[data-show-secrets]")) setSecrets(true);
+  if (e.target.closest("[data-hide-secrets]")) setSecrets(false);
+});
+// Switching apps or tabs hides everything straight away.
+document.addEventListener("visibilitychange", () => { if (document.hidden && secretsShown) setSecrets(false); });
 
 async function loadFamily(id) {
   familyId = id; remember(id);
@@ -443,7 +475,23 @@ Type DELETE to confirm:`);
   catch (err) { showMsg($("accountMsg"), err.message); }
 });
 
-$("familySwitch").addEventListener("change", e => { resetForm(); showMsg($("wishMsg"), ""); loadFamily(e.target.value).then(renderFooter); });
+async function switchFamily(id) {
+  resetForm(); showMsg($("wishMsg"), "");
+  secretsShown = false; clearTimeout(hideTimer);
+  await loadFamily(id);
+  renderTabs(); renderFooter();
+}
+
+function renderTabs() {
+  const fams = account?.families || [];
+  $("familyTabs").classList.toggle("hidden", fams.length < 2);
+  $("familyTabs").innerHTML = fams.map(f =>
+    `<button class="tab ${f.family_id === familyId ? "active" : ""}" data-family="${f.family_id}">The ${esc(f.family)} family</button>`).join("");
+}
+$("familyTabs").addEventListener("click", e => {
+  const id = e.target.closest("[data-family]")?.dataset.family;
+  if (id && id !== familyId) switchFamily(id);
+});
 
 // ---------- Boot ----------
 async function boot() {
@@ -476,9 +524,8 @@ async function boot() {
 
   const ids = account.families.map(f => f.family_id);
   const pick = ids.includes(remembered()) ? remembered() : ids[0];
-  $("familySwitch").innerHTML = account.families.map(f => `<option value="${f.family_id}" ${f.family_id === pick ? "selected" : ""}>The ${esc(f.family)} family</option>`).join("");
-  $("familySwitch").classList.toggle("hidden", ids.length < 2);
   try { await loadFamily(pick); } catch (err) { showMsg($("error"), err.message); }
+  renderTabs();
   renderFooter();
 }
 
