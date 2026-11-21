@@ -79,6 +79,9 @@ function renderNav(account, active, familyId) {
   if (nav) nav.innerHTML = links.length
     ? links.map(([key, href, label]) => `<a href="${href}" class="${key === active ? "active" : ""}">${label}</a>`).join("")
     : "";
+  // On phones the same links live inside the Account menu instead (see .menu-nav in theme.css).
+  const menuNav = document.getElementById("menuNav");
+  if (menuNav) menuNav.innerHTML = links.map(([key, href, label]) => `<a href="${href}" class="${key === active ? "active" : ""}">${label}</a>`).join("");
   const who = document.getElementById("whoami");
   if (who && account?.email) who.textContent = account.email;
 }

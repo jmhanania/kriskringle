@@ -323,3 +323,10 @@ details.acct .menu-pop { min-width: 220px; }
 /* Long updates show 3 lines with "Read more" */
 .post-body.clamped { display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .read-more { margin-top: var(--s1); font-size: var(--fs-sm) !important; }
+/* Phones: Organise / Super admin move from the top bar into the Account menu */
+.menu-nav { display: none; }
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  .menu-nav:not(:empty) { display: flex; flex-direction: column; border-bottom: 1px solid var(--line); padding-bottom: var(--s1); margin-bottom: var(--s1); }
+  .menu-nav a.active { font-weight: 600; }
+}
