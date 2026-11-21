@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
-<title>Kris Kringle</title>
+<title>Kris Kringle Generator</title>
+<meta name="description" content="Secret Santa draws and wish lists for the whole family.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=Lora:wght@400;600&display=swap" rel="stylesheet">
@@ -12,49 +12,79 @@
 </head>
 <body>
 <canvas id="snow"></canvas>
+<nav class="topbar hidden" id="topbar">
+  <select id="familySwitch" class="hidden" aria-label="Switch family"></select>
+  <span class="spacer"></span>
+  <span class="muted" id="whoami"></span>
+  <button class="small link" id="signOut">Sign out</button>
+</nav>
 <main>
   <header>
     <div class="lights" aria-hidden="true"><span>🔴</span><span>🟡</span><span>🟢</span><span>🔵</span><span>🔴</span><span>🟡</span><span>🟢</span></div>
     <h1><span class="family family-name"></span>Kris Kringle</h1>
-    <p class="sub" id="greeting">Loading your page…</p>
+    <p class="sub" id="greeting">Secret draws and wish lists for the whole family 🎄</p>
   </header>
 
   <div id="error"></div>
 
-  <div id="landing" class="hidden">
-    <section id="welcomeBack" class="hidden">
-      <h2>👋 Welcome back</h2>
-      <p style="margin:0 0 12px">You're signed in on this device as <strong id="wbName"></strong>.</p>
-      <div class="row">
-        <a class="btn primary-btn" id="wbGo">Go to my page →</a>
-        <button class="link" id="wbForget">Not you? Forget this device</button>
+  <!-- Signed out -->
+  <div id="signedOut" class="hidden">
+    <section id="authCard">
+      <div id="authEmailStep">
+        <h2 id="authTitle">👋 Sign in</h2>
+        <form id="emailForm">
+          <div class="row hidden" id="nameRow"><input type="text" id="authName" placeholder="Your first name" maxlength="80" autocomplete="given-name"></div>
+          <div class="row" style="margin-top:8px"><input type="email" id="authEmail" placeholder="Your email address" required autocomplete="email" inputmode="email"></div>
+          <div class="row" style="margin-top:10px"><button class="primary" type="submit" id="emailBtn">Email me a sign-in code</button></div>
+        </form>
+        <p class="muted" style="margin:12px 0 0">No password needed. We'll email you a code.
+          <span id="authToggleText">New here?</span> <button class="link inline" id="authToggle">Create an account</button></p>
       </div>
+      <div id="authCodeStep" class="hidden">
+        <h2>📬 Check your email</h2>
+        <p style="margin:0 0 10px">We sent a code to <strong id="sentTo"></strong>. Type it below, or tap the button in the email.</p>
+        <form id="codeForm">
+          <div class="row"><input type="text" id="authCode" placeholder="Code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="10" required style="font-size:22px; letter-spacing:6px; text-align:center"></div>
+          <div class="row" style="margin-top:10px"><button class="primary" type="submit" id="codeBtn">Sign in</button></div>
+        </form>
+        <p class="muted" style="margin:12px 0 0">Not there? Check your spam folder, or <button class="link inline" id="authBack">use a different email</button>.</p>
+      </div>
+      <div id="authMsg"></div>
     </section>
 
     <section>
       <h2>🎁 How it works</h2>
       <ol class="steps">
-        <li><strong>One person organises.</strong> They start your family's Kris Kringle and add everyone.</li>
-        <li><strong>Names go in the Santa hat.</strong> The draw is random, and it can keep couples from drawing each other.</li>
-        <li><strong>Everyone gets their own private page</strong> showing who they're buying for, that person's wish list, and a place to write their own.</li>
+        <li><strong>One person organises.</strong> They create an account, start your family, and add everyone's email.</li>
+        <li><strong>Everyone else signs up with that email</strong> and lands in the family automatically.</li>
+        <li><strong>Names go in the Santa hat.</strong> Everyone sees who they're buying for, that person's wish list, and a place to write their own.</li>
       </ol>
     </section>
-
-    <div class="paths">
-      <section>
-        <h2>🎄 I'm joining my family</h2>
-        <p>Your organiser sends each person a <strong>personal link</strong> by text or email. Open it to see who you're buying for and add your wish list.</p>
-        <p class="muted">Can't find it? Ask your organiser to send it again.</p>
-      </section>
-      <section>
-        <h2>🎅 I'm organising</h2>
-        <p>Set up your family, add everyone, and run the draw. It takes about 5 minutes.</p>
-        <a class="btn primary-btn" href="start.html">Start your family's Kris Kringle →</a>
-        <p class="muted" style="margin-bottom:0">You'll need an invite code from the site owner.</p>
-      </section>
-    </div>
   </div>
 
+  <!-- Signed in, not in a family yet -->
+  <div id="noFamily" class="hidden">
+    <section>
+      <h2>🎄 Joining your family?</h2>
+      <p style="margin:0">Ask your family's organiser to add <strong class="my-email"></strong> to the family list. As soon as they do, refresh this page and you'll be in.</p>
+      <div class="row" style="margin-top:12px"><button id="refreshBtn">Refresh</button></div>
+    </section>
+  </div>
+
+  <section id="startCard" class="hidden">
+    <h2>🎅 Start a family</h2>
+    <p style="margin:0 0 10px">You'll be the organiser: add everyone, set any no-go pairs, and run the draw.</p>
+    <form id="startForm">
+      <div class="row">
+        <input type="text" id="famName" placeholder="Family name, e.g. Smith" maxlength="60" required>
+        <input type="text" id="myName" placeholder="Your name" maxlength="80" required>
+      </div>
+      <div class="row" style="margin-top:10px"><button class="primary" type="submit" id="startBtn">Create our Kris Kringle</button></div>
+    </form>
+    <div id="startMsg"></div>
+  </section>
+
+  <!-- Signed in, viewing a family -->
   <div id="page" class="hidden">
     <section>
       <h2>🎅 You're buying for…</h2>
@@ -86,30 +116,90 @@
   </div>
 
   <footer>
-    <span id="adminLink"></span>
-    <span class="family-footer"></span>
+    <span id="footLinks"></span>
+    <span class="family-footer">Merry Christmas 🎄</span>
   </footer>
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="common.js"></script>
 <script>
-const code = codeFromHash();
-let data = null;
+const FAMILY_KEY = "kk.family";
+let account = null;   // { email, is_super_admin, families: [...] }
+let familyId = null;
+let data = null;      // get_my_page result
 let editingId = null;
+let creating = false; // auth form in "create account" mode
+let pendingEmail = "";
 
-function wishHtml(w, editable) {
-  const url = safeUrl(w.url);
-  const title = url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(w.title)} ↗</a>` : esc(w.title);
-  return `<li>
-    <div style="flex:1 1 260px">
-      <div class="wish-title">${title}${w.price_cents != null ? ` <span class="muted">· ~${money(w.price_cents)}</span>` : ""}</div>
-      ${w.notes ? `<div class="muted">${esc(w.notes)}</div>` : ""}
-    </div>
-    ${editable ? `<div class="actions"><button class="small" data-edit="${w.id}">Edit</button><button class="small link" data-del="${w.id}">Remove</button></div>` : ""}
-  </li>`;
+const hide = (...ids) => ids.forEach(id => $(id).classList.add("hidden"));
+const show = (...ids) => ids.forEach(id => $(id).classList.remove("hidden"));
+const remember = id => { try { localStorage.setItem(FAMILY_KEY, id); } catch {} };
+const remembered = () => { try { return localStorage.getItem(FAMILY_KEY); } catch { return null; } };
+
+// ---------- Sign in / create account ----------
+function setAuthMode(create) {
+  creating = create;
+  $("authTitle").textContent = create ? "✨ Create your account" : "👋 Sign in";
+  $("nameRow").classList.toggle("hidden", !create);
+  $("authName").required = create;
+  $("emailBtn").textContent = create ? "Create account" : "Email me a sign-in code";
+  $("authToggleText").textContent = create ? "Already have an account?" : "New here?";
+  $("authToggle").textContent = create ? "Sign in" : "Create an account";
+  showMsg($("authMsg"), "");
 }
+$("authToggle").addEventListener("click", () => setAuthMode(!creating));
 
+$("emailForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  pendingEmail = $("authEmail").value.trim().toLowerCase();
+  $("emailBtn").disabled = true;
+  showMsg($("authMsg"), "");
+  const name = $("authName").value.trim();
+  const { error } = await sb.auth.signInWithOtp({
+    email: pendingEmail,
+    options: { shouldCreateUser: true, emailRedirectTo: siteUrl(), data: creating && name ? { name } : undefined },
+  });
+  $("emailBtn").disabled = false;
+  if (error) {
+    showMsg($("authMsg"), /rate|seconds/i.test(error.message)
+      ? "Too many codes requested. Please wait a minute and try again."
+      : error.message);
+    return;
+  }
+  $("sentTo").textContent = pendingEmail;
+  hide("authEmailStep"); show("authCodeStep");
+  $("authCode").value = ""; $("authCode").focus();
+});
+
+$("codeForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("codeBtn").disabled = true;
+  showMsg($("authMsg"), "");
+  const token = $("authCode").value.replace(/\D/g, "");
+  const { error } = await sb.auth.verifyOtp({ email: pendingEmail, token, type: "email" });
+  $("codeBtn").disabled = false;
+  if (error) { showMsg($("authMsg"), /expired|invalid/i.test(error.message) ? "That code didn't work. Check it, or request a new one." : error.message); return; }
+  // onAuthStateChange takes it from here.
+});
+
+$("authBack").addEventListener("click", () => { hide("authCodeStep"); show("authEmailStep"); showMsg($("authMsg"), ""); });
+$("signOut").addEventListener("click", signOut);
+$("refreshBtn").addEventListener("click", () => boot());
+
+// ---------- Start a family ----------
+$("startForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("startBtn").disabled = true;
+  try {
+    const id = await rpc("create_family", { p_family_name: $("famName").value, p_my_name: $("myName").value });
+    remember(id);
+    location.href = `admin.html?f=${id}`;
+  } catch (err) { showMsg($("startMsg"), err.message); $("startBtn").disabled = false; }
+});
+
+// ---------- Personal page ----------
 function render() {
   const { me, wishlist, event, recipient } = data;
   $("greeting").textContent = `Hi ${me.name}! 🎄`;
@@ -133,43 +223,23 @@ function render() {
   $("myList").innerHTML = wishlist.length
     ? wishlist.map(w => wishHtml(w, true)).join("")
     : `<li class="empty">Nothing yet. Add a few ideas so your Kris Kringle knows what to get you!</li>`;
-
-  const c = encodeURIComponent(code);
-  $("adminLink").innerHTML = (me.is_admin ? `<a href="admin.html#${c}">Family admin</a> · ` : "")
-    + (me.is_super_admin ? `<a href="super.html#${c}">Super admin</a> · ` : "");
-  $("page").classList.remove("hidden");
+  show("page");
 }
 
-// Remember the last link opened on this device so the plain address can offer "Welcome back".
-const SAVED_KEY = "kk.savedCode";
-const savedCode = () => { try { return localStorage.getItem(SAVED_KEY); } catch { return null; } };
-const saveCode = c => { try { c ? localStorage.setItem(SAVED_KEY, c) : localStorage.removeItem(SAVED_KEY); } catch {} };
-
-async function showLanding() {
-  $("greeting").textContent = "Secret draws and wish lists for the whole family 🎄";
-  document.title = "Kris Kringle Generator";
-  document.querySelectorAll(".family-footer").forEach(el => el.textContent = "Merry Christmas 🎄");
-  $("landing").classList.remove("hidden");
-  const saved = savedCode();
-  if (!saved) return;
-  try {
-    const d = await rpc("get_my_page", { p_code: saved });
-    $("wbName").textContent = `${d.me.name} (${d.family} family)`;
-    $("wbGo").href = "#" + encodeURIComponent(saved);
-    $("welcomeBack").classList.remove("hidden");
-  } catch { saveCode(null); }  // link no longer valid
+function renderFooter() {
+  const links = [];
+  const fam = account.families.find(f => f.family_id === familyId);
+  if (fam?.is_admin) links.push(`<a href="admin.html?f=${fam.family_id}">Organise the ${esc(fam.family)} family</a>`);
+  if (account.families.length) links.push(`<a href="#" id="startAnother">Start another family</a>`);
+  if (account.is_super_admin) links.push(`<a href="super.html">Super admin</a>`);
+  $("footLinks").innerHTML = links.length ? links.join(" · ") + "<br>" : "";
+  $("startAnother")?.addEventListener("click", e => { e.preventDefault(); show("startCard"); $("startCard").scrollIntoView({ behavior: "smooth" }); });
 }
 
-async function load() {
-  if (!code) return showLanding();
-  try {
-    data = await rpc("get_my_page", { p_code: code });
-    saveCode(code);
-    render();
-  } catch (e) {
-    $("greeting").textContent = "Hmm…";
-    showMsg($("error"), e.message);
-  }
+async function loadFamily(id) {
+  familyId = id; remember(id);
+  data = await rpc("get_my_page", { p_family: id });
+  render();
 }
 
 function resetForm() {
@@ -182,24 +252,20 @@ function resetForm() {
 
 $("wishForm").addEventListener("submit", async e => {
   e.preventDefault();
-  let url = $("wUrl").value.trim();
-  if (url && !/^[a-z]+:/i.test(url)) url = "https://" + url;  // accept "amazon.ca/..." without the https://
-  if (url && (!safeUrl(url) || !/^https?:\/\/[^\s/]+\.[^\s/]+/i.test(url))) { showMsg($("wishMsg"), "That link doesn't look right. Try copying it from your browser's address bar."); return; }
+  const url = normalizeUrl($("wUrl").value);
+  if (url === null) { showMsg($("wishMsg"), "That link doesn't look right. Try copying it from your browser's address bar."); return; }
   $("wSave").disabled = true;
   try {
     await rpc("save_wish", {
-      p_code: code, p_id: editingId, p_title: $("wTitle").value,
+      p_family: familyId, p_id: editingId, p_title: $("wTitle").value,
       p_url: url || null, p_notes: $("wNotes").value || null,
       p_price_cents: $("wPrice").value.trim() ? toCents($("wPrice").value) : null,
     });
     showMsg($("wishMsg"), editingId ? "Updated ✓" : "Added to your list ✓", "ok");
     resetForm();
-    await load();
-  } catch (err) {
-    showMsg($("wishMsg"), err.message);
-  } finally {
-    $("wSave").disabled = false;
-  }
+    await loadFamily(familyId);
+  } catch (err) { showMsg($("wishMsg"), err.message); }
+  finally { $("wSave").disabled = false; }
 });
 
 $("wCancel").addEventListener("click", () => { resetForm(); showMsg($("wishMsg"), ""); });
@@ -220,16 +286,60 @@ $("myList").addEventListener("click", async e => {
     const w = data.wishlist.find(x => x.id === delId);
     if (!confirm(`Remove "${w.title}" from your list?`)) return;
     try {
-      await rpc("delete_wish", { p_code: code, p_id: delId });
+      await rpc("delete_wish", { p_family: familyId, p_id: delId });
       if (editingId === delId) resetForm();
-      await load();
+      await loadFamily(familyId);
     } catch (err) { showMsg($("wishMsg"), err.message); }
   }
 });
 
-$("wbForget").addEventListener("click", () => { saveCode(null); $("welcomeBack").classList.add("hidden"); });
-addEventListener("hashchange", () => location.reload());
-load();
+$("familySwitch").addEventListener("change", e => { resetForm(); showMsg($("wishMsg"), ""); loadFamily(e.target.value).then(renderFooter); });
+
+// ---------- Boot ----------
+async function boot() {
+  hide("signedOut", "noFamily", "startCard", "page", "topbar");
+  showMsg($("error"), "");
+  const user = await currentUser();
+  if (!user) {
+    setFamily("", "");
+    document.title = "Kris Kringle Generator";
+    show("signedOut");
+    return;
+  }
+
+  try { account = await rpc("my_account"); }
+  catch (err) { showMsg($("error"), err.message); return; }
+
+  $("whoami").textContent = account.email;
+  document.querySelectorAll(".my-email").forEach(el => el.textContent = account.email);
+  show("topbar");
+  $("myName").value = user.user_metadata?.name || "";
+
+  if (!account.families.length) {
+    $("greeting").textContent = `Welcome${user.user_metadata?.name ? ", " + user.user_metadata.name : ""}! 🎄`;
+    setFamily("", "");
+    show("noFamily", "startCard");
+    renderFooter();
+    return;
+  }
+
+  const ids = account.families.map(f => f.family_id);
+  const pick = ids.includes(remembered()) ? remembered() : ids[0];
+  $("familySwitch").innerHTML = account.families.map(f => `<option value="${f.family_id}" ${f.family_id === pick ? "selected" : ""}>The ${esc(f.family)} family</option>`).join("");
+  $("familySwitch").classList.toggle("hidden", ids.length < 2);
+  try { await loadFamily(pick); } catch (err) { showMsg($("error"), err.message); }
+  renderFooter();
+}
+
+// Re-render only when who's signed in actually changes (browsers can re-fire SIGNED_IN on tab focus).
+let lastUserId;
+sb.auth.onAuthStateChange((event, session) => {
+  const uid = session?.user?.id ?? null;
+  if (uid === lastUserId) return;
+  lastUserId = uid;
+  // Defer so supabase-js finishes its own bookkeeping before we call the API.
+  setTimeout(boot, 0);
+});
 </script>
 </body>
 </html>

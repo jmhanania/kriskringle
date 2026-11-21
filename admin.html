@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Admin · Kris Kringle</title>
+<title>Organise · Kris Kringle</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=Lora:wght@400;600&display=swap" rel="stylesheet">
@@ -12,11 +12,17 @@
 </head>
 <body>
 <canvas id="snow"></canvas>
+<nav class="topbar" id="topbar">
+  <a href="./" class="small">← My page</a>
+  <span class="spacer"></span>
+  <span class="muted" id="whoami"></span>
+  <button class="small link" id="signOut">Sign out</button>
+</nav>
 <main>
   <header>
     <div class="lights" aria-hidden="true"><span>🔴</span><span>🟡</span><span>🟢</span><span>🔵</span><span>🔴</span><span>🟡</span><span>🟢</span></div>
     <h1><span class="family family-name"></span>Kris Kringle Generator</h1>
-    <p class="sub">Admin page: manage the family, run the draw, send the links.</p>
+    <p class="sub">Organiser page: add the family, set the rules, run the draw.</p>
   </header>
 
   <div id="error"></div>
@@ -24,11 +30,11 @@
   <div id="app" class="hidden">
     <section>
       <h2><span>👨‍👩‍👧‍👦 The family <small id="famCount"></small></span><button class="small link" id="renameFamily">Rename family</button></h2>
+      <p class="muted" style="margin:0 0 10px">Add each person's email. When they create an account with that email, they'll join automatically. Leave email blank for kids or anyone without one, and you can manage their wish list for them.</p>
       <form id="personForm">
         <div class="row">
           <input type="text" id="pName" placeholder="Name" maxlength="80" required>
-          <input type="email" id="pEmail" placeholder="Email (optional)" maxlength="200">
-          <input type="tel" id="pPhone" placeholder="Mobile (optional)" maxlength="40">
+          <input type="email" id="pEmail" placeholder="Email (so they can sign in)" maxlength="200">
         </div>
         <div class="row" style="margin-top:8px">
           <button type="submit" id="pSave">Add person</button>
@@ -37,6 +43,21 @@
       </form>
       <div id="famMsg"></div>
       <ul class="list" id="family"></ul>
+    </section>
+
+    <section id="managedCard" class="hidden">
+      <h2><span>🎁 <span id="managedName"></span>'s wish list</span><button class="small link" id="managedClose">Done</button></h2>
+      <p class="muted" style="margin:0 0 10px">They don't have an account, so organisers keep this list for them.</p>
+      <ul class="list" id="managedList"></ul>
+      <form id="managedForm" style="margin-top:10px">
+        <div class="row">
+          <input type="text" id="mTitle" placeholder="Gift idea" maxlength="200" required>
+          <input type="text" id="mPrice" placeholder="Approx. price ($)" inputmode="decimal" style="flex:0 1 150px">
+        </div>
+        <div class="row" style="margin-top:8px"><input type="text" id="mUrl" placeholder="Link (optional)" maxlength="1000" inputmode="url" autocomplete="off"></div>
+        <div class="row" style="margin-top:8px"><button type="submit" id="mSave">Add</button></div>
+      </form>
+      <div id="managedMsg"></div>
     </section>
 
     <section>
@@ -64,31 +85,39 @@
     </section>
   </div>
 
-  <footer><span id="myLink"></span> <span class="family-footer"></span></footer>
+  <footer><span class="family-footer"></span></footer>
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="common.js"></script>
 <script>
-const code = codeFromHash();
-let state = null;          // { admin_id, people, events }
+const familyId = new URLSearchParams(location.search).get("f");
+let state = null;          // { admin_id, family, people, events }
 let selectedId = null;
 let editingPersonId = null;
 let editingEvent = null;   // null | "new" | event id
+let managedId = null;      // person whose wish list the organiser is editing
+let managedWishes = [];
 const revealed = new Set();
 
 const personById = id => state.people.find(p => p.id === id);
 const nameOf = id => personById(id)?.name ?? "(removed)";
 const selected = () => state.events.find(e => e.id === selectedId);
-const linkFor = p => new URL("./", location.href).href.replace(/index\.html$/, "") + "#" + p.access_code;
 
-function emailSubject() { return `Your ${state.family} Kris Kringle link 🎄`; }
-
-function inviteText(p) {
-  return `Hi ${p.name}! 🎄 Here's your personal link for the ${state.family} family Kris Kringle. See who you're buying for and add your wish list:\n${linkFor(p)}\n\nIt's just for you, so don't share it!`;
+function inviteMail(p) {
+  const subject = `Join the ${state.family} family Kris Kringle 🎄`;
+  const body = `Hi ${p.name}! 🎄\n\nI've added you to our family Kris Kringle. Create an account at ${siteUrl()} using this email address (${p.email}) and you'll be in. You'll see who you're buying for once the names are drawn, and you can add your own wish list.`;
+  return `mailto:${encodeURIComponent(p.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
-// ---------- Draw engine (same as the original generator) ----------
+function statusOf(p) {
+  if (p.has_account) return `<span class="badge ok">✓ Joined</span>`;
+  if (p.email) return `<span class="badge">Waiting to sign up</span>`;
+  return `<span class="badge">No account · you manage their list</span>`;
+}
+
+// ---------- Draw engine ----------
 function shuffle(arr) {
   const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {
@@ -124,36 +153,34 @@ function generateDraw(people, rules) {
 
 // ---------- Loading ----------
 async function load() {
-  state = await rpc("admin_get_state", { p_code: code });
+  state = await rpc("admin_get_state", { p_family: familyId });
   if (!state.events.some(e => e.id === selectedId)) selectedId = state.events[0]?.id ?? null;
   render();
 }
 
 function render() {
-  setFamily(state.family, "Admin");
+  setFamily(state.family, "Organise");
   renderFamily();
   renderEvents();
-  const me = personById(state.admin_id);
-  $("myLink").innerHTML = me ? `<a href="${esc(linkFor(me))}">My personal page</a> · ` : "";
   $("app").classList.remove("hidden");
 }
 
 // ---------- Family ----------
 function renderFamily() {
-  $("famCount").textContent = `${state.people.length} ${state.people.length === 1 ? "person" : "people"}`;
+  const joined = state.people.filter(p => p.has_account).length;
+  $("famCount").textContent = `${state.people.length} ${state.people.length === 1 ? "person" : "people"} · ${joined} joined`;
   $("family").innerHTML = state.people.map(p => `
     <li>
-      <div style="flex:1 1 200px">
-        <strong>${esc(p.name)}</strong>${p.is_admin ? ` <span class="muted">(admin)</span>` : ""}
-        <div class="muted">${[p.email, p.phone].filter(Boolean).map(esc).join(" · ") || "No contact details"} · 🎁 ${p.wish_count} wish${p.wish_count === 1 ? "" : "es"}</div>
+      <div style="flex:1 1 220px">
+        <strong>${esc(p.name)}</strong>${p.is_admin ? ` <span class="muted">(organiser)</span>` : ""}
+        <div class="muted">${p.email ? esc(p.email) + " · " : ""}🎁 ${p.wish_count} wish${p.wish_count === 1 ? "" : "es"}</div>
+        <div style="margin-top:4px">${statusOf(p)}</div>
       </div>
       <div class="actions">
-        <button class="small" data-act="copy" data-id="${p.id}">Copy link</button>
-        ${p.email ? `<a class="btn small" href="mailto:${esc(p.email)}?subject=${encodeURIComponent(emailSubject())}&body=${encodeURIComponent(inviteText(p))}">Email</a>` : ""}
-        ${p.phone ? `<a class="btn small" href="sms:${esc(p.phone.replace(/[^\d+]/g, ""))}?&body=${encodeURIComponent(inviteText(p))}">Text</a>` : ""}
+        ${p.email && !p.has_account ? `<a class="btn small" href="${inviteMail(p)}">Invite</a>` : ""}
+        ${!p.has_account ? `<button class="small" data-act="wishes" data-id="${p.id}">Wish list</button>` : ""}
         <button class="small" data-act="edit" data-id="${p.id}">Edit</button>
-        <button class="small link" data-act="newlink" data-id="${p.id}" title="Use if a link was shared by mistake">New link</button>
-        ${p.id === state.admin_id ? "" : `<button class="small link" data-act="toggleAdmin" data-id="${p.id}">${p.is_admin ? "Remove admin" : "Make admin"}</button>`}
+        ${p.id === state.admin_id ? "" : `<button class="small link" data-act="toggleAdmin" data-id="${p.id}">${p.is_admin ? "Remove organiser" : "Make organiser"}</button>`}
         ${p.id === state.admin_id ? "" : `<button class="small link" data-act="remove" data-id="${p.id}">Remove</button>`}
       </div>
     </li>`).join("");
@@ -162,6 +189,7 @@ function renderFamily() {
 function resetPersonForm() {
   editingPersonId = null;
   $("personForm").reset();
+  $("pEmail").disabled = false;
   $("pSave").textContent = "Add person";
   $("pCancel").classList.add("hidden");
 }
@@ -170,11 +198,15 @@ $("personForm").addEventListener("submit", async e => {
   e.preventDefault();
   $("pSave").disabled = true;
   try {
+    const editing = editingPersonId;
     await rpc("admin_save_person", {
-      p_code: code, p_id: editingPersonId, p_name: $("pName").value,
-      p_email: $("pEmail").value || null, p_phone: $("pPhone").value || null,
+      p_family: familyId, p_id: editing, p_name: $("pName").value,
+      p_email: $("pEmail").value || null, p_phone: null,
     });
-    showMsg($("famMsg"), editingPersonId ? "Saved ✓" : `Added ${$("pName").value.trim()} ✓`, "ok");
+    const name = $("pName").value.trim(), email = $("pEmail").value.trim();
+    showMsg($("famMsg"), editing ? "Saved ✓" : email
+      ? `Added ${name} ✓ They'll join as soon as they create an account with ${email}. Use "Invite" to let them know.`
+      : `Added ${name} ✓ Use "Wish list" to add gift ideas for them.`, "ok");
     resetPersonForm();
     await load();
     $("pName").focus();
@@ -186,7 +218,7 @@ $("pCancel").addEventListener("click", resetPersonForm);
 $("renameFamily").addEventListener("click", async () => {
   const name = prompt("Family name (shown as \"The ___ Kris Kringle\"):", state.family);
   if (!name || !name.trim() || name.trim() === state.family) return;
-  try { await rpc("admin_rename_family", { p_code: code, p_name: name }); await load(); }
+  try { await rpc("admin_rename_family", { p_family: familyId, p_name: name }); await load(); }
   catch (err) { showMsg($("famMsg"), err.message); }
 });
 
@@ -195,33 +227,66 @@ $("family").addEventListener("click", async e => {
   if (!btn) return;
   const p = personById(btn.dataset.id);
   try {
-    if (btn.dataset.act === "copy") {
-      await navigator.clipboard.writeText(linkFor(p));
-      btn.textContent = "Copied!"; setTimeout(() => btn.textContent = "Copy link", 1500);
-    } else if (btn.dataset.act === "edit") {
+    if (btn.dataset.act === "edit") {
       editingPersonId = p.id;
-      $("pName").value = p.name; $("pEmail").value = p.email || ""; $("pPhone").value = p.phone || "";
+      $("pName").value = p.name; $("pEmail").value = p.email || "";
+      $("pEmail").disabled = p.has_account;   // their email is their login now
       $("pSave").textContent = "Save changes"; $("pCancel").classList.remove("hidden");
       $("pName").focus();
-    } else if (btn.dataset.act === "newlink") {
-      if (!confirm(`Make a new link for ${p.name}? Their old link will stop working, so you'll need to send them the new one.`)) return;
-      await rpc("admin_regenerate_code", { p_code: code, p_id: p.id });
-      await load();
-      showMsg($("famMsg"), `New link made for ${p.name}. Remember to send it to them.`, "ok");
+    } else if (btn.dataset.act === "wishes") {
+      openManaged(p);
     } else if (btn.dataset.act === "toggleAdmin") {
       const msg = p.is_admin
-        ? `Remove admin access from ${p.name}? They'll keep their personal page.`
-        : `Make ${p.name} an admin? They'll be able to manage the family and run the draw from their own link.`;
+        ? `Remove organiser access from ${p.name}?`
+        : `Make ${p.name} an organiser? They'll be able to manage the family and run the draw.${p.has_account ? "" : " (They'll need to create an account first.)"}`;
       if (!confirm(msg)) return;
-      await rpc("admin_set_admin", { p_code: code, p_id: p.id, p_is_admin: !p.is_admin });
+      await rpc("admin_set_admin", { p_family: familyId, p_id: p.id, p_is_admin: !p.is_admin });
       await load();
-      if (!p.is_admin) showMsg($("famMsg"), `${p.name} is now an admin. Their family admin page is admin.html with their personal code on the end, also linked from their personal page.`, "ok");
     } else if (btn.dataset.act === "remove") {
-      if (!confirm(`Remove ${p.name} from the family list? Their wish list will be deleted, and any draw they're in will be reset.`)) return;
-      await rpc("admin_delete_person", { p_code: code, p_id: p.id });
+      if (!confirm(`Remove ${p.name} from the family? Their wish list will be deleted, and any draw they're in will be reset.`)) return;
+      await rpc("admin_delete_person", { p_family: familyId, p_id: p.id });
+      if (managedId === p.id) closeManaged();
       await load();
     }
   } catch (err) { showMsg($("famMsg"), err.message); }
+});
+
+// ---------- Wish lists for people without accounts ----------
+async function openManaged(p) {
+  managedId = p.id;
+  $("managedName").textContent = p.name;
+  showMsg($("managedMsg"), "");
+  $("managedCard").classList.remove("hidden");
+  await loadManaged();
+  $("managedCard").scrollIntoView({ behavior: "smooth", block: "start" });
+  $("mTitle").focus();
+}
+function closeManaged() { managedId = null; $("managedCard").classList.add("hidden"); }
+async function loadManaged() {
+  managedWishes = await rpc("admin_get_wishlist", { p_family: familyId, p_person: managedId });
+  $("managedList").innerHTML = managedWishes.length
+    ? managedWishes.map(w => wishHtml(w, false).replace("</li>", `<div class="actions"><button class="small link" data-mdel="${w.id}">Remove</button></div></li>`)).join("")
+    : `<li class="empty">No ideas yet.</li>`;
+}
+$("managedClose").addEventListener("click", async () => { closeManaged(); await load(); });
+$("managedForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const url = normalizeUrl($("mUrl").value);
+  if (url === null) { showMsg($("managedMsg"), "That link doesn't look right."); return; }
+  try {
+    await rpc("save_wish", {
+      p_family: familyId, p_for_person: managedId, p_title: $("mTitle").value, p_url: url || null,
+      p_price_cents: $("mPrice").value.trim() ? toCents($("mPrice").value) : null,
+    });
+    $("managedForm").reset(); showMsg($("managedMsg"), "");
+    await loadManaged(); $("mTitle").focus();
+  } catch (err) { showMsg($("managedMsg"), err.message); }
+});
+$("managedList").addEventListener("click", async e => {
+  const id = e.target.dataset.mdel;
+  if (!id) return;
+  try { await rpc("delete_wish", { p_family: familyId, p_for_person: managedId, p_id: id }); await loadManaged(); }
+  catch (err) { showMsg($("managedMsg"), err.message); }
 });
 
 // ---------- Exchanges ----------
@@ -282,8 +347,10 @@ function renderEvents() {
 
 function drawHtml(ev) {
   const rows = [...ev.assignments].sort((a, b) => nameOf(a.giver).localeCompare(nameOf(b.giver)));
+  const waiting = rows.map(a => personById(a.giver)).filter(p => p && !p.has_account);
   return `
-    <div class="msg ok">✅ Drawn! Everyone can now see their match on their personal page. Send each person their link:</div>
+    <div class="msg ok">✅ Drawn! Everyone with an account can now sign in and see their match.</div>
+    ${waiting.length ? `<p class="muted">Not signed up yet: ${waiting.map(p => esc(p.name)).join(", ")}. ${waiting.some(p => !p.email) ? "For anyone without an account, peek below and let them know in person." : ""}</p>` : ""}
     <table>${rows.map(a => {
       const p = personById(a.giver);
       const show = revealed.has(a.giver);
@@ -291,11 +358,7 @@ function drawHtml(ev) {
         <td><strong>${esc(p.name)}</strong></td>
         <td class="arrow">→</td>
         <td>${show ? esc(nameOf(a.receiver)) : `<button class="small link" data-reveal="${a.giver}">•••••• peek</button>`}</td>
-        <td style="text-align:right"><div class="actions" style="justify-content:flex-end">
-          <button class="small" data-copy="${p.id}">Copy link</button>
-          ${p.email ? `<a class="btn small" href="mailto:${esc(p.email)}?subject=${encodeURIComponent(emailSubject())}&body=${encodeURIComponent(inviteText(p))}">Email</a>` : ""}
-          ${p.phone ? `<a class="btn small" href="sms:${esc(p.phone.replace(/[^\d+]/g, ""))}?&body=${encodeURIComponent(inviteText(p))}">Text</a>` : ""}
-        </div></td>
+        <td style="text-align:right">${statusOf(p)}</td>
       </tr>`;
     }).join("")}</table>
     <p class="muted">Matches stay hidden here so you can join in too. Only peek if you need to.</p>`;
@@ -325,7 +388,7 @@ async function saveSetup(ev, participants, exclusions) {
     renderEvents(); return;
   }
   try {
-    await rpc("admin_set_event_setup", { p_code: code, p_event: ev.id, p_person_ids: participants, p_exclusions: exclusions });
+    await rpc("admin_set_event_setup", { p_family: familyId, p_event: ev.id, p_person_ids: participants, p_exclusions: exclusions });
     revealed.clear();
     await load();
   } catch (err) { showMsg($("eventMsg"), err.message); }
@@ -344,7 +407,7 @@ $("eventForm").addEventListener("submit", async e => {
   e.preventDefault();
   try {
     const id = await rpc("admin_save_event", {
-      p_code: code, p_id: editingEvent === "new" ? null : editingEvent, p_name: $("eName").value,
+      p_family: familyId, p_id: editingEvent === "new" ? null : editingEvent, p_name: $("eName").value,
       p_exchange_date: $("eDate").value || null,
       p_budget_cents: $("eBudget").value.trim() ? toCents($("eBudget").value) : null,
     });
@@ -352,7 +415,7 @@ $("eventForm").addEventListener("submit", async e => {
       // Start new exchanges with everyone in, and carry over the most recent no-go pairs.
       const template = state.events[0];
       await rpc("admin_set_event_setup", {
-        p_code: code, p_event: id, p_person_ids: state.people.map(p => p.id),
+        p_family: familyId, p_event: id, p_person_ids: state.people.map(p => p.id),
         p_exclusions: template ? template.exclusions : [],
       });
     }
@@ -365,7 +428,7 @@ $("eDelete").addEventListener("click", async () => {
   const ev = selected();
   if (!confirm(`Delete "${ev.name}" and its draw? This can't be undone. Wish lists are not affected.`)) return;
   try {
-    await rpc("admin_delete_event", { p_code: code, p_id: ev.id });
+    await rpc("admin_delete_event", { p_family: familyId, p_id: ev.id });
     editingEvent = null; selectedId = null;
     await load();
   } catch (err) { showMsg($("eventMsg"), err.message); }
@@ -396,13 +459,9 @@ $("eventBody").addEventListener("click", async e => {
     saveSetup(ev, ev.participants, rules); return;
   }
   if (t.dataset.reveal) { revealed.add(t.dataset.reveal); renderEvents(); return; }
-  if (t.dataset.copy) {
-    await navigator.clipboard.writeText(linkFor(personById(t.dataset.copy)));
-    t.textContent = "Copied!"; setTimeout(() => t.textContent = "Copy link", 1500); return;
-  }
   if (t.id === "clearDraw") {
     if (!confirm("Clear this draw? People will see \"the draw hasn't happened yet\" until you draw again.")) return;
-    try { await rpc("admin_clear_draw", { p_code: code, p_event: ev.id }); revealed.clear(); await load(); }
+    try { await rpc("admin_clear_draw", { p_family: familyId, p_event: ev.id }); revealed.clear(); await load(); }
     catch (err) { showMsg($("eventMsg"), err.message); }
     return;
   }
@@ -421,7 +480,7 @@ $("eventBody").addEventListener("click", async e => {
     if (!draw) { showMsg($("eventMsg"), "No valid draw is possible with these no-go pairs. Remove a rule or add more people."); return; }
     t.disabled = true;
     try {
-      await rpc("admin_save_draw", { p_code: code, p_event: ev.id, p_pairs: draw });
+      await rpc("admin_save_draw", { p_family: familyId, p_event: ev.id, p_pairs: draw });
       revealed.clear();
       await load();
       showMsg($("eventMsg"), "🎉 Ho ho ho! The draw is saved." + note, "ok");
@@ -437,13 +496,16 @@ $("eventBody").addEventListener("change", e => {
   saveSetup(ev, parts, ev.exclusions);
 });
 
+$("signOut").addEventListener("click", signOut);
+
 // ---------- Start ----------
 (async () => {
-  if (!code) { showMsg($("error"), "Open this page with your admin link (it ends in #your-code)."); return; }
+  const user = await requireUser();
+  $("whoami").textContent = user.email;
+  if (!familyId) { location.replace("./"); return; }
   try { await load(); }
   catch (e) { showMsg($("error"), e.message); }
 })();
-addEventListener("hashchange", () => location.reload());
 </script>
 </body>
 </html>

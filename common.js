@@ -1,49 +1,62 @@
-// Shared helpers for the personal and admin pages.
+// Shared helpers for every page. Requires supabase-js (loaded from the CDN) and config.js.
+
+const sb = window.supabase.createClient(window.KK_CONFIG.url, window.KK_CONFIG.key, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+});
 
 const ERRORS = {
-  invalid_code: "That link doesn't look right. Ask your family's organiser for a fresh one.",
-  not_super_admin: "This link doesn't have super-admin access.",
-  invalid_invite: "That invite code isn't right. Check with whoever gave it to you.",
+  not_signed_in: "Please sign in again.",
+  not_member: "You're not a member of that family.",
+  not_admin: "Only the family's organisers can do that.",
+  not_super_admin: "Only the site owner can see this page.",
+  not_managed_member: "That person has their own account, so only they can change their wish list.",
+  invalid_email: "That email address doesn't look right.",
+  email_locked: "This person has already created their account, so their email can't be changed.",
+  too_many_families: "You can create up to 5 families.",
   too_many_signups: "Lots of families are signing up right now. Please try again in an hour.",
-  invite_too_short: "Invite codes need at least 6 characters.",
-  cannot_delete_own_family: "You can't delete your own family from here.",
-  cannot_demote_self: "You can't remove your own admin access.",
-  family_full: "This family has reached the 200-person limit.",
-  too_many_events: "This family has reached the 100-exchange limit.",
-  not_admin: "This link doesn't have admin access.",
-  wishlist_full: "Your wish list is full (50 items max).",
+  wishlist_full: "That wish list is full (50 items max).",
   invalid_draw: "That draw broke a rule, so it wasn't saved. Try again.",
   not_enough_participants: "You need at least 2 people in the exchange.",
-  cannot_delete_self: "You can't remove yourself as the admin.",
+  cannot_delete_self: "You can't remove yourself.",
+  cannot_demote_self: "You can't remove your own organiser access.",
+  family_full: "This family has reached the 200-person limit.",
+  too_many_events: "This family has reached the 100-exchange limit.",
 };
 
 async function rpc(fn, args = {}) {
-  const { url, key } = window.KK_CONFIG;
-  let res;
-  try {
-    res = await fetch(`${url}/rest/v1/rpc/${fn}`, {
-      method: "POST",
-      headers: { apikey: key, "Content-Type": "application/json" },
-      body: JSON.stringify(args),
-    });
-  } catch {
-    throw new Error("Couldn't reach the server. Check your connection and try again.");
+  const { data, error } = await sb.rpc(fn, args);
+  if (error) {
+    const msg = error.message || "";
+    if (msg.includes("people_name_unique")) throw new Error("Someone in this family already has that name.");
+    if (msg.includes("people_family_email")) throw new Error("Someone in this family already has that email.");
+    if (/JWT|not_signed_in/i.test(msg)) throw new Error(ERRORS.not_signed_in);
+    if (/Failed to fetch|NetworkError/i.test(msg)) throw new Error("Couldn't reach the server. Check your connection and try again.");
+    throw new Error(ERRORS[msg] || msg || "Something went wrong.");
   }
-  const body = res.status === 204 ? null : await res.json().catch(() => null);
-  if (!res.ok) {
-    const code = body?.message || "";
-    if (code.includes("people_name_unique")) throw new Error("Someone with that name is already in the family list.");
-    throw new Error(ERRORS[code] || code || `Something went wrong (${res.status}).`);
-  }
-  return body;
+  return data;
+}
+
+async function currentUser() {
+  const { data } = await sb.auth.getSession();
+  return data.session?.user ?? null;
+}
+
+// For pages that need a signed-in user: sends visitors to the home page to sign in.
+async function requireUser() {
+  const user = await currentUser();
+  if (!user) { location.replace("./"); throw new Error("redirecting"); }
+  return user;
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+  try { localStorage.removeItem("kk.family"); } catch {}
+  location.replace("./");
 }
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const $ = id => document.getElementById(id);
-
-function codeFromHash() {
-  return decodeURIComponent(location.hash.replace(/^#/, "")).trim();
-}
+const siteUrl = () => new URL("./", location.href).href;
 
 function money(cents) {
   if (cents == null) return "";
@@ -64,15 +77,36 @@ function safeUrl(u) {
   return /^https?:\/\//i.test(u || "") ? u : null;
 }
 
+// Accepts "amazon.ca/..." without the https://. Returns the cleaned URL, "" for blank, or null if invalid.
+function normalizeUrl(raw) {
+  let url = String(raw || "").trim();
+  if (!url) return "";
+  if (!/^[a-z]+:/i.test(url)) url = "https://" + url;
+  return safeUrl(url) && /^https?:\/\/[^\s/]+\.[^\s/]+/i.test(url) ? url : null;
+}
+
 // Fills every .family-name element with "The <name>" and updates the tab title.
 function setFamily(name, suffix) {
-  document.querySelectorAll(".family-name").forEach(el => el.textContent = `The ${name}`);
-  document.querySelectorAll(".family-footer").forEach(el => el.textContent = `Merry Christmas from the ${name} family 🎄`);
-  document.title = `${suffix ? suffix + " · " : ""}${name} Kris Kringle`;
+  document.querySelectorAll(".family-name").forEach(el => el.textContent = name ? `The ${name}` : "");
+  document.querySelectorAll(".family-footer").forEach(el => el.textContent = name ? `Merry Christmas from the ${name} family 🎄` : "Merry Christmas 🎄");
+  document.title = `${suffix ? suffix + " · " : ""}${name ? name + " " : ""}Kris Kringle`;
 }
 
 function showMsg(el, text, kind = "err") {
   el.innerHTML = text ? `<div class="msg ${kind}">${esc(text)}</div>` : "";
+}
+
+// Renders a wish list item. `editable` adds Edit/Remove buttons carrying data-edit/data-del.
+function wishHtml(w, editable) {
+  const url = safeUrl(w.url);
+  const title = url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(w.title)} ↗</a>` : esc(w.title);
+  return `<li>
+    <div style="flex:1 1 260px">
+      <div class="wish-title">${title}${w.price_cents != null ? ` <span class="muted">· ~${money(w.price_cents)}</span>` : ""}</div>
+      ${w.notes ? `<div class="muted">${esc(w.notes)}</div>` : ""}
+    </div>
+    ${editable ? `<div class="actions"><button class="small" data-edit="${w.id}">Edit</button><button class="small link" data-del="${w.id}">Remove</button></div>` : ""}
+  </li>`;
 }
 
 // Falling snow
