@@ -1,7 +1,15 @@
 // Shared helpers for the personal and admin pages.
 
 const ERRORS = {
-  invalid_code: "That link doesn't look right. Ask Jacob for a fresh one.",
+  invalid_code: "That link doesn't look right. Ask your family's organiser for a fresh one.",
+  not_super_admin: "This link doesn't have super-admin access.",
+  invalid_invite: "That invite code isn't right. Check with whoever gave it to you.",
+  too_many_signups: "Lots of families are signing up right now. Please try again in an hour.",
+  invite_too_short: "Invite codes need at least 6 characters.",
+  cannot_delete_own_family: "You can't delete your own family from here.",
+  cannot_demote_self: "You can't remove your own admin access.",
+  family_full: "This family has reached the 200-person limit.",
+  too_many_events: "This family has reached the 100-exchange limit.",
   not_admin: "This link doesn't have admin access.",
   wishlist_full: "Your wish list is full (50 items max).",
   invalid_draw: "That draw broke a rule, so it wasn't saved. Try again.",
@@ -54,6 +62,13 @@ function prettyDate(iso) {
 
 function safeUrl(u) {
   return /^https?:\/\//i.test(u || "") ? u : null;
+}
+
+// Fills every .family-name element with "The <name>" and updates the tab title.
+function setFamily(name, suffix) {
+  document.querySelectorAll(".family-name").forEach(el => el.textContent = `The ${name}`);
+  document.querySelectorAll(".family-footer").forEach(el => el.textContent = `Merry Christmas from the ${name} family 🎄`);
+  document.title = `${suffix ? suffix + " · " : ""}${name} Kris Kringle`;
 }
 
 function showMsg(el, text, kind = "err") {

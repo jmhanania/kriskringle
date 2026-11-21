@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Admin · Hanania Kris Kringle</title>
+<title>Admin · Kris Kringle</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=Lora:wght@400;600&display=swap" rel="stylesheet">
@@ -15,7 +15,7 @@
 <main>
   <header>
     <div class="lights" aria-hidden="true"><span>🔴</span><span>🟡</span><span>🟢</span><span>🔵</span><span>🔴</span><span>🟡</span><span>🟢</span></div>
-    <h1><span class="family">The Hanania</span>Kris Kringle Generator</h1>
+    <h1><span class="family family-name"></span>Kris Kringle Generator</h1>
     <p class="sub">Admin page: manage the family, run the draw, send the links.</p>
   </header>
 
@@ -23,7 +23,7 @@
 
   <div id="app" class="hidden">
     <section>
-      <h2>👨‍👩‍👧‍👦 The family <small id="famCount"></small></h2>
+      <h2><span>👨‍👩‍👧‍👦 The family <small id="famCount"></small></span><button class="small link" id="renameFamily">Rename family</button></h2>
       <form id="personForm">
         <div class="row">
           <input type="text" id="pName" placeholder="Name" maxlength="80" required>
@@ -64,7 +64,7 @@
     </section>
   </div>
 
-  <footer><span id="myLink"></span> Merry Christmas from the Hananias 🎄</footer>
+  <footer><span id="myLink"></span> <span class="family-footer"></span></footer>
 </main>
 
 <script src="config.js"></script>
@@ -82,8 +82,10 @@ const nameOf = id => personById(id)?.name ?? "(removed)";
 const selected = () => state.events.find(e => e.id === selectedId);
 const linkFor = p => new URL("./", location.href).href.replace(/index\.html$/, "") + "#" + p.access_code;
 
+function emailSubject() { return `Your ${state.family} Kris Kringle link 🎄`; }
+
 function inviteText(p) {
-  return `Hi ${p.name}! 🎄 Here's your personal link for the Hanania Kris Kringle. See who you're buying for and add your wish list:\n${linkFor(p)}\n\nIt's just for you, so don't share it!`;
+  return `Hi ${p.name}! 🎄 Here's your personal link for the ${state.family} family Kris Kringle. See who you're buying for and add your wish list:\n${linkFor(p)}\n\nIt's just for you, so don't share it!`;
 }
 
 // ---------- Draw engine (same as the original generator) ----------
@@ -128,6 +130,7 @@ async function load() {
 }
 
 function render() {
+  setFamily(state.family, "Admin");
   renderFamily();
   renderEvents();
   const me = personById(state.admin_id);
@@ -146,11 +149,12 @@ function renderFamily() {
       </div>
       <div class="actions">
         <button class="small" data-act="copy" data-id="${p.id}">Copy link</button>
-        ${p.email ? `<a class="btn small" href="mailto:${esc(p.email)}?subject=${encodeURIComponent("Your Hanania Kris Kringle link 🎄")}&body=${encodeURIComponent(inviteText(p))}">Email</a>` : ""}
+        ${p.email ? `<a class="btn small" href="mailto:${esc(p.email)}?subject=${encodeURIComponent(emailSubject())}&body=${encodeURIComponent(inviteText(p))}">Email</a>` : ""}
         ${p.phone ? `<a class="btn small" href="sms:${esc(p.phone.replace(/[^\d+]/g, ""))}?&body=${encodeURIComponent(inviteText(p))}">Text</a>` : ""}
         <button class="small" data-act="edit" data-id="${p.id}">Edit</button>
         <button class="small link" data-act="newlink" data-id="${p.id}" title="Use if a link was shared by mistake">New link</button>
-        ${p.is_admin ? "" : `<button class="small link" data-act="remove" data-id="${p.id}">Remove</button>`}
+        ${p.id === state.admin_id ? "" : `<button class="small link" data-act="toggleAdmin" data-id="${p.id}">${p.is_admin ? "Remove admin" : "Make admin"}</button>`}
+        ${p.id === state.admin_id ? "" : `<button class="small link" data-act="remove" data-id="${p.id}">Remove</button>`}
       </div>
     </li>`).join("");
 }
@@ -179,6 +183,13 @@ $("personForm").addEventListener("submit", async e => {
 });
 $("pCancel").addEventListener("click", resetPersonForm);
 
+$("renameFamily").addEventListener("click", async () => {
+  const name = prompt("Family name (shown as \"The ___ Kris Kringle\"):", state.family);
+  if (!name || !name.trim() || name.trim() === state.family) return;
+  try { await rpc("admin_rename_family", { p_code: code, p_name: name }); await load(); }
+  catch (err) { showMsg($("famMsg"), err.message); }
+});
+
 $("family").addEventListener("click", async e => {
   const btn = e.target.closest("button[data-act]");
   if (!btn) return;
@@ -197,6 +208,14 @@ $("family").addEventListener("click", async e => {
       await rpc("admin_regenerate_code", { p_code: code, p_id: p.id });
       await load();
       showMsg($("famMsg"), `New link made for ${p.name}. Remember to send it to them.`, "ok");
+    } else if (btn.dataset.act === "toggleAdmin") {
+      const msg = p.is_admin
+        ? `Remove admin access from ${p.name}? They'll keep their personal page.`
+        : `Make ${p.name} an admin? They'll be able to manage the family and run the draw from their own link.`;
+      if (!confirm(msg)) return;
+      await rpc("admin_set_admin", { p_code: code, p_id: p.id, p_is_admin: !p.is_admin });
+      await load();
+      if (!p.is_admin) showMsg($("famMsg"), `${p.name} is now an admin. Their family admin page is admin.html with their personal code on the end, also linked from their personal page.`, "ok");
     } else if (btn.dataset.act === "remove") {
       if (!confirm(`Remove ${p.name} from the family list? Their wish list will be deleted, and any draw they're in will be reset.`)) return;
       await rpc("admin_delete_person", { p_code: code, p_id: p.id });
@@ -274,7 +293,7 @@ function drawHtml(ev) {
         <td>${show ? esc(nameOf(a.receiver)) : `<button class="small link" data-reveal="${a.giver}">•••••• peek</button>`}</td>
         <td style="text-align:right"><div class="actions" style="justify-content:flex-end">
           <button class="small" data-copy="${p.id}">Copy link</button>
-          ${p.email ? `<a class="btn small" href="mailto:${esc(p.email)}?subject=${encodeURIComponent("Your Hanania Kris Kringle link 🎄")}&body=${encodeURIComponent(inviteText(p))}">Email</a>` : ""}
+          ${p.email ? `<a class="btn small" href="mailto:${esc(p.email)}?subject=${encodeURIComponent(emailSubject())}&body=${encodeURIComponent(inviteText(p))}">Email</a>` : ""}
           ${p.phone ? `<a class="btn small" href="sms:${esc(p.phone.replace(/[^\d+]/g, ""))}?&body=${encodeURIComponent(inviteText(p))}">Text</a>` : ""}
         </div></td>
       </tr>`;

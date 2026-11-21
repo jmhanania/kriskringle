@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Hanania Kris Kringle</title>
+<title>Kris Kringle</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=Lora:wght@400;600&display=swap" rel="stylesheet">
@@ -15,7 +15,7 @@
 <main>
   <header>
     <div class="lights" aria-hidden="true"><span>🔴</span><span>🟡</span><span>🟢</span><span>🔵</span><span>🔴</span><span>🟡</span><span>🟢</span></div>
-    <h1><span class="family">The Hanania</span>Kris Kringle</h1>
+    <h1><span class="family family-name"></span>Kris Kringle</h1>
     <p class="sub" id="greeting">Loading your page…</p>
   </header>
 
@@ -53,7 +53,7 @@
 
   <footer>
     <span id="adminLink"></span>
-    Merry Christmas from the Hananias 🎄
+    <span class="family-footer"></span>
   </footer>
 </main>
 
@@ -79,7 +79,7 @@ function wishHtml(w, editable) {
 function render() {
   const { me, wishlist, event, recipient } = data;
   $("greeting").textContent = `Hi ${me.name}! 🎄`;
-  document.title = `${me.name} · Hanania Kris Kringle`;
+  setFamily(data.family, me.name);
 
   if (recipient) {
     const bits = [event.exchange_date && `🗓️ ${prettyDate(event.exchange_date)}`, event.budget_cents != null && `💰 Budget ${money(event.budget_cents)}`].filter(Boolean);
@@ -100,14 +100,17 @@ function render() {
     ? wishlist.map(w => wishHtml(w, true)).join("")
     : `<li class="empty">Nothing yet. Add a few ideas so your Kris Kringle knows what to get you!</li>`;
 
-  $("adminLink").innerHTML = me.is_admin ? `<a href="admin.html#${encodeURIComponent(code)}">Admin page</a> · ` : "";
+  const c = encodeURIComponent(code);
+  $("adminLink").innerHTML = (me.is_admin ? `<a href="admin.html#${c}">Family admin</a> · ` : "")
+    + (me.is_super_admin ? `<a href="super.html#${c}">Super admin</a> · ` : "");
   $("page").classList.remove("hidden");
 }
 
 async function load() {
   if (!code) {
     $("greeting").textContent = "Welcome!";
-    showMsg($("error"), "Open this page using the personal link you were sent. Each person has their own.");
+    $("error").innerHTML = `<div class="msg err">Open this page using the personal link you were sent. Each person has their own.</div>
+      <p class="sub" style="text-align:center;margin-top:16px">Organising for your family? <a href="start.html" style="color:var(--gold)">Start your family's Kris Kringle</a></p>`;
     return;
   }
   try {

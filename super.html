@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Super admin · Kris Kringle Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=Lora:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+</head>
+<body>
+<canvas id="snow"></canvas>
+<main>
+  <header>
+    <div class="lights" aria-hidden="true"><span>🔴</span><span>🟡</span><span>🟢</span><span>🔵</span><span>🔴</span><span>🟡</span><span>🟢</span></div>
+    <h1><span class="family">Super admin</span>Kris Kringle Generator</h1>
+    <p class="sub">Every family on the site. Their draws and wish lists stay private, even from here.</p>
+  </header>
+
+  <div id="error"></div>
+
+  <div id="app" class="hidden">
+    <section>
+      <h2>🎟️ Invite code <small>New families need this to sign up</small></h2>
+      <div class="row">
+        <input type="text" id="invite" readonly style="font-weight:600; letter-spacing:1px">
+        <button id="copyInvite">Copy sign-up link</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <input type="text" id="newInvite" placeholder="New code (leave blank for a random one)" maxlength="40">
+        <button id="changeInvite">Change code</button>
+      </div>
+      <p class="muted">Changing the code doesn't affect families who already signed up. It only stops the old code from creating new ones.</p>
+      <div id="inviteMsg"></div>
+    </section>
+
+    <section>
+      <h2>🏡 Families <small id="famCount"></small></h2>
+      <div id="famMsg"></div>
+      <ul class="list" id="families"></ul>
+    </section>
+  </div>
+
+  <footer><span id="links"></span> Merry Christmas 🎄</footer>
+</main>
+
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+const code = codeFromHash();
+let state = null;
+
+const base = () => new URL("./", location.href).href;
+const adminLinkFor = a => base() + "admin.html#" + a.access_code;
+
+async function load() {
+  state = await rpc("super_get_state", { p_code: code });
+  render();
+}
+
+function render() {
+  $("invite").value = state.invite_code;
+  $("famCount").textContent = `${state.families.length} ${state.families.length === 1 ? "family" : "families"}`;
+  $("families").innerHTML = state.families.map(f => {
+    const mine = f.id === state.my_family_id;
+    return `<li style="display:block">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <strong>${esc(f.name)}</strong>${mine ? ` <span class="muted">(your family)</span>` : ""}
+          <div class="muted">👥 ${f.people_count} people · 🎄 ${f.event_count} exchange${f.event_count === 1 ? "" : "s"} · joined ${new Date(f.created_at).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" })}</div>
+        </div>
+        ${mine ? "" : `<button class="small link" data-del="${f.id}">Delete family</button>`}
+      </div>
+      <div style="margin-top:6px">
+        ${f.admins.map(a => `
+          <div class="row" style="justify-content:space-between; padding:4px 0">
+            <span class="muted">Admin: <strong style="color:var(--ink)">${esc(a.name)}</strong>${a.email ? ` · ${esc(a.email)}` : ""}${a.phone ? ` · ${esc(a.phone)}` : ""}</span>
+            <div class="actions">
+              <button class="small" data-copy="${a.id}">Copy admin link</button>
+              <button class="small link" data-relink="${a.id}" title="Use if they lost their link or it leaked">New link</button>
+            </div>
+          </div>`).join("") || `<span class="muted">No admins!</span>`}
+      </div>
+    </li>`;
+  }).join("") || `<li class="empty">No families yet.</li>`;
+
+  const c = encodeURIComponent(code);
+  $("links").innerHTML = `<a href="./#${c}">My personal page</a> · <a href="admin.html#${c}">My family admin</a> · `;
+  $("app").classList.remove("hidden");
+}
+
+const findAdmin = id => state.families.flatMap(f => f.admins.map(a => ({ ...a, family: f.name }))).find(a => a.id === id);
+
+$("copyInvite").addEventListener("click", async e => {
+  await navigator.clipboard.writeText(`${base()}start.html?invite=${encodeURIComponent(state.invite_code)}`);
+  e.target.textContent = "Copied!"; setTimeout(() => e.target.textContent = "Copy sign-up link", 1500);
+});
+
+$("changeInvite").addEventListener("click", async () => {
+  if (!confirm("Change the invite code? The old code will stop working for new sign-ups.")) return;
+  try {
+    await rpc("super_set_invite", { p_code: code, p_invite: $("newInvite").value || null });
+    $("newInvite").value = "";
+    await load();
+    showMsg($("inviteMsg"), "Invite code changed ✓", "ok");
+  } catch (err) { showMsg($("inviteMsg"), err.message); }
+});
+
+$("families").addEventListener("click", async e => {
+  const t = e.target;
+  try {
+    if (t.dataset.copy) {
+      await navigator.clipboard.writeText(adminLinkFor(findAdmin(t.dataset.copy)));
+      t.textContent = "Copied!"; setTimeout(() => t.textContent = "Copy admin link", 1500);
+    } else if (t.dataset.relink) {
+      const a = findAdmin(t.dataset.relink);
+      if (!confirm(`Make a new admin link for ${a.name} (${a.family})? Their old link stops working, so you'll need to send them the new one.`)) return;
+      await rpc("super_regenerate_admin_link", { p_code: code, p_person: a.id });
+      await load();
+      showMsg($("famMsg"), `New link made for ${a.name}. Use "Copy admin link" to send it.`, "ok");
+    } else if (t.dataset.del) {
+      const f = state.families.find(x => x.id === t.dataset.del);
+      const typed = prompt(`This permanently deletes the ${f.name} family: all ${f.people_count} people, their wish lists and every exchange. It can't be undone.\n\nType the family name to confirm:`);
+      if (typed === null) return;
+      if (typed.trim().toLowerCase() !== f.name.toLowerCase()) { showMsg($("famMsg"), "Name didn't match, so nothing was deleted."); return; }
+      await rpc("super_delete_family", { p_code: code, p_family: f.id });
+      await load();
+      showMsg($("famMsg"), `${f.name} family deleted.`, "ok");
+    }
+  } catch (err) { showMsg($("famMsg"), err.message); }
+});
+
+(async () => {
+  if (!code) { showMsg($("error"), "Open this page with your super-admin link."); return; }
+  try { await load(); } catch (err) { showMsg($("error"), err.message); }
+})();
+addEventListener("hashchange", () => location.reload());
+</script>
+</body>
+</html>

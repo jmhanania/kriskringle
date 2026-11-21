@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Start your family · Kris Kringle Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=Lora:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+</head>
+<body>
+<canvas id="snow"></canvas>
+<main>
+  <header>
+    <div class="lights" aria-hidden="true"><span>🔴</span><span>🟡</span><span>🟢</span><span>🔵</span><span>🔴</span><span>🟡</span><span>🟢</span></div>
+    <h1><span class="family">Your family's</span>Kris Kringle Generator</h1>
+    <p class="sub">Secret draws, wish lists, and a private link for everyone. No passwords or apps.</p>
+  </header>
+
+  <section id="formCard">
+    <h2>🎄 Start your family</h2>
+    <form id="startForm">
+      <div class="row"><input type="text" id="invite" placeholder="Invite code, e.g. KK-XXXXXXXX" autocomplete="off" required></div>
+      <div class="row" style="margin-top:8px">
+        <input type="text" id="family" placeholder="Family name, e.g. Smith" maxlength="60" required>
+        <input type="text" id="name" placeholder="Your name" maxlength="80" required>
+      </div>
+      <div class="row" style="margin-top:8px"><input type="email" id="email" placeholder="Your email (optional)" maxlength="200"></div>
+      <div class="row" style="margin-top:12px"><button class="primary" type="submit" id="go">Create our Kris Kringle</button></div>
+    </form>
+    <div id="msg"></div>
+    <p class="muted" style="margin-top:16px">
+      You'll be your family's organiser: you add everyone, set any no-go pairs, run the draw and send out links.
+      <br><br>
+      <strong>Privacy:</strong> your family's names, contact details and wish lists are stored on this site's database.
+      Other families can't see them, but the site's owner technically could. Only add what you're comfortable sharing.
+    </p>
+  </section>
+
+  <section id="doneCard" class="hidden">
+    <h2>🎉 You're all set!</h2>
+    <p><strong>Save your admin link now.</strong> It's the only way back in. Bookmark it, or email it to yourself.</p>
+    <div class="row">
+      <input type="text" id="adminLink" readonly>
+      <button id="copyAdmin">Copy</button>
+    </div>
+    <p class="muted">Don't share this one. It lets whoever has it manage your family. Your own personal page (your match and wish list) is linked from the admin page.</p>
+    <div class="row" style="margin-top:12px"><a class="btn" id="openAdmin" style="background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600">Open my admin page →</a></div>
+  </section>
+
+  <footer>Merry Christmas 🎄</footer>
+</main>
+
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+const params = new URLSearchParams(location.search);
+if (params.get("invite")) $("invite").value = params.get("invite");
+
+$("startForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("go").disabled = true;
+  showMsg($("msg"), "");
+  try {
+    const code = await rpc("create_family", {
+      p_invite: $("invite").value, p_family_name: $("family").value,
+      p_admin_name: $("name").value, p_email: $("email").value || null,
+    });
+    const link = new URL("admin.html", location.href).href.split("?")[0] + "#" + code;
+    $("adminLink").value = link;
+    $("openAdmin").href = link;
+    $("formCard").classList.add("hidden");
+    $("doneCard").classList.remove("hidden");
+  } catch (err) {
+    showMsg($("msg"), err.message);
+    $("go").disabled = false;
+  }
+});
+
+$("copyAdmin").addEventListener("click", async e => {
+  await navigator.clipboard.writeText($("adminLink").value);
+  e.target.textContent = "Copied!"; setTimeout(() => e.target.textContent = "Copy", 1500);
+});
+</script>
+</body>
+</html>
