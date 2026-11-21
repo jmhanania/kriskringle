@@ -39,18 +39,17 @@
         <form id="emailForm">
           <div class="row hidden" id="nameRow"><input type="text" id="authName" placeholder="Your first name" maxlength="80" autocomplete="given-name"></div>
           <div class="row" style="margin-top:8px"><input type="email" id="authEmail" placeholder="Your email address" required autocomplete="email" inputmode="email"></div>
-          <div class="row" style="margin-top:10px"><button class="primary" type="submit" id="emailBtn">Email me a sign-in link</button></div>
+          <div class="row" style="margin-top:10px"><button class="primary" type="submit" id="emailBtn">Email me a sign-in code</button></div>
         </form>
-        <p class="muted" style="margin:12px 0 0">No password needed. We'll email you a sign-in link.
+        <p class="muted" style="margin:12px 0 0">No password needed. We'll email you a code.
           <span id="authToggleText">New here?</span> <button class="link inline" id="authToggle">Create an account</button></p>
       </div>
       <div id="authCodeStep" class="hidden">
         <h2>📬 Check your email</h2>
-        <p style="margin:0 0 10px">We sent an email to <strong id="sentTo"></strong>. <strong>Tap the sign-in link in it</strong> and you'll be signed in. You can close this tab.</p>
-        <p class="muted" style="margin:0 0 10px">If your email shows a code instead, type it here:</p>
+        <p style="margin:0 0 10px">We sent a code to <strong id="sentTo"></strong>. It's in the email's subject line. Type it below, or tap the button in the email.</p>
         <form id="codeForm">
           <div class="row"><input type="text" id="authCode" placeholder="Code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="10" required style="font-size:22px; letter-spacing:6px; text-align:center"></div>
-          <div class="row" style="margin-top:10px"><button type="submit" id="codeBtn">Sign in with code</button></div>
+          <div class="row" style="margin-top:10px"><button class="primary" type="submit" id="codeBtn">Sign in</button></div>
         </form>
         <p class="muted" style="margin:12px 0 0">Not there? Check your spam folder, or <button class="link inline" id="authBack">use a different email</button>.</p>
       </div>
@@ -149,7 +148,7 @@ function setAuthMode(create) {
   $("authTitle").textContent = create ? "✨ Create your account" : "👋 Sign in";
   $("nameRow").classList.toggle("hidden", !create);
   $("authName").required = create;
-  $("emailBtn").textContent = create ? "Create account" : "Email me a sign-in link";
+  $("emailBtn").textContent = create ? "Create account" : "Email me a sign-in code";
   $("authToggleText").textContent = create ? "Already have an account?" : "New here?";
   $("authToggle").textContent = create ? "Sign in" : "Create an account";
   showMsg($("authMsg"), "");
@@ -175,7 +174,7 @@ $("emailForm").addEventListener("submit", async e => {
   }
   $("sentTo").textContent = pendingEmail;
   hide("authEmailStep"); show("authCodeStep");
-  $("authCode").value = "";
+  $("authCode").value = ""; $("authCode").focus();
 });
 
 $("codeForm").addEventListener("submit", async e => {
