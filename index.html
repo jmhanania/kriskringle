@@ -20,7 +20,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=Lora:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="theme.css?v=2026-11-22c">
+<link rel="stylesheet" href="theme.css?v=2026-11-22d">
 </head>
 <body>
 <canvas id="snow"></canvas>
@@ -29,6 +29,7 @@
   <div class="nav-links" id="navLinks"></div>
   <span class="spacer"></span>
   <span class="whoami" id="whoami"></span>
+  <a href="#account" class="hidden" id="accountLink">Account</a>
   <button class="small link" id="signOut">Sign out</button>
 </nav>
 <main>
@@ -36,10 +37,15 @@
     <div class="lights" aria-hidden="true"><span>🔴</span><span>🟡</span><span>🟢</span><span>🔵</span><span>🔴</span><span>🟡</span><span>🟢</span></div>
     <h1><span class="family family-name"></span>Kris Kringle</h1>
     <p class="sub" id="greeting">Secret draws and wish lists for the whole family 🎄</p>
+    <button class="link switch hidden" id="switchFamily">⇄ Switch family</button>
   </header>
 
   <div id="error"></div>
-  <nav id="familyTabs" class="tabs hidden" aria-label="Your families"></nav>
+  <section id="familyPicker" class="hidden">
+    <h2>🏡 Your families</h2>
+    <p class="hint">Choose which family's Kris Kringle to open.</p>
+    <div class="picker" id="familyCards"></div>
+  </section>
 
   <!-- Signed out -->
   <div id="signedOut" class="hidden">
@@ -101,11 +107,20 @@
 
   <!-- Signed in, viewing a family -->
   <div id="page" class="hidden">
-    <section id="boardCard" class="hidden">
+    <nav class="segmented" id="viewTabs" aria-label="Sections">
+      <button data-view="kk">🎅 Kris Kringle<span class="dot hidden" id="kkDot"></span></button>
+      <button data-view="wish">🎁 My wish list<span class="dot hidden" id="wishDot"></span></button>
+      <button data-view="board">📣 Board<span class="dot hidden" id="boardDot"></span></button>
+    </nav>
+
+    <div class="pane" data-pane="board">
+    <section id="boardCard">
       <h2>📣 Family board</h2>
       <div id="board"></div>
     </section>
+    </div>
 
+    <div class="pane" data-pane="kk">
     <section id="revealCard" class="hidden">
       <h2>🎉 The big reveal</h2>
       <p>Your Kris Kringle was…</p>
@@ -126,7 +141,9 @@
       </form>
       <div id="santaMsg"></div>
     </section>
+    </div>
 
+    <div class="pane" data-pane="wish">
     <section>
       <h2>🎁 My wish list <small>Your Kris Kringle sees this</small></h2>
       <ul class="list" id="myList"></ul>
@@ -146,10 +163,11 @@
       </form>
       <div id="wishMsg"></div>
     </section>
+    </div>
 
+    <div class="pane" data-pane="account">
     <section>
-      <details class="account" id="accountBox">
-        <summary>⚙️ My account</summary>
+      <h2>⚙️ My account <small class="my-email"></small></h2>
         <form id="renameForm">
           <div class="field"><label for="newName">My name in this family</label><input type="text" id="newName" maxlength="80" required></div>
           <div class="row"><button type="submit">Save name</button></div>
@@ -162,8 +180,8 @@
           <button type="button" class="small danger" id="leaveBtn">Leave this family</button>
           <button type="button" class="small danger" id="deleteBtn">Delete my account</button>
         </div>
-      </details>
     </section>
+    </div>
   </div>
 
   <footer>
@@ -174,8 +192,8 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-11-22c"></script>
-<script src="common.js?v=2026-11-22c"></script>
+<script src="config.js?v=2026-11-22d"></script>
+<script src="common.js?v=2026-11-22d"></script>
 <script>
 const FAMILY_KEY = "kk.family";
 let account = null;   // { email, is_super_admin, families: [...] }
@@ -292,6 +310,8 @@ function render() {
     : `<button data-show-secrets>💌 Tap to read ${santa.length === 1 ? "1 message" : `${santa.length} messages`}</button>`;
   $("replyForm").classList.toggle("hidden", !secretsShown);
   $("newName").value = me.name;
+  $("wishDot").classList.toggle("hidden", wishlist.length > 0);
+  $("kkDot").classList.toggle("hidden", !(data.santa_thread || []).length);
   $("myList").innerHTML = wishlist.length
     ? wishlist.map(w => wishHtml(w, true)).join("")
     : `<li class="empty">Nothing yet. Add a few ideas so your Kris Kringle knows what to get you!</li>`;
@@ -421,8 +441,8 @@ function renderBoard() {
   const polls = board.polls.filter(p => p.status === "open" || p.decision != null).slice(0, 5);
   const posts = showAllPosts ? board.posts : board.posts.slice(0, 3);
   const has = ex?.rules || polls.length || board.posts.length;
-  $("boardCard").classList.toggle("hidden", !has);
-  if (!has) return;
+  $("boardDot").classList.toggle("hidden", !board.polls.some(p => p.status === "open" && p.my_vote == null));
+  if (!has) { $("board").innerHTML = `<p class="empty">Nothing here yet. Your organiser will post updates, polls and house rules here.</p>`; return; }
   const facts = ex ? [ex.exchange_date && `🗓️ ${prettyDate(ex.exchange_date)}`, ex.budget_cents != null && `💰 ${money(ex.budget_cents)}`].filter(Boolean) : [];
   $("board").innerHTML = `
     ${ex && (ex.rules || facts.length) ? `<div class="rules">
@@ -525,23 +545,64 @@ Type DELETE to confirm:`);
   catch (err) { showMsg($("accountMsg"), err.message); }
 });
 
+// ---------- Family picker ----------
 async function switchFamily(id) {
   resetForm(); showMsg($("wishMsg"), "");
   secretsShown = false; clearTimeout(hideTimer);
+  hide("familyPicker");
   await loadFamily(id);
-  renderTabs(); renderFooter();
+  $("switchFamily").classList.toggle("hidden", account.families.length < 2);
+  setView(currentView);
+  renderFooter();
 }
 
-function renderTabs() {
-  const fams = account?.families || [];
-  $("familyTabs").classList.toggle("hidden", fams.length < 2);
-  $("familyTabs").innerHTML = fams.map(f =>
-    `<button class="tab ${f.family_id === familyId ? "active" : ""}" data-family="${f.family_id}">The ${esc(f.family)} family</button>`).join("");
+function showPicker() {
+  secretsShown = false; clearTimeout(hideTimer);
+  hide("page", "switchFamily", "startCard");
+  setFamily("", "");
+  $("greeting").textContent = "Which family?";
+  const last = remembered();
+  $("familyCards").innerHTML = account.families.map(f => `
+    <button class="picker-card" data-family="${f.family_id}">
+      <span class="picker-name">The ${esc(f.family)} family</span>
+      <span class="picker-meta">You're ${esc(f.name)}${f.is_admin ? " · organiser" : ""}${f.family_id === last ? " · last opened" : ""}</span>
+      <span class="picker-go" aria-hidden="true">→</span>
+    </button>`).join("");
+  show("familyPicker");
+  renderNav(account, "home", null);
 }
-$("familyTabs").addEventListener("click", e => {
+$("familyCards").addEventListener("click", e => {
   const id = e.target.closest("[data-family]")?.dataset.family;
-  if (id && id !== familyId) switchFamily(id);
+  if (id) switchFamily(id);
 });
+$("switchFamily").addEventListener("click", showPicker);
+
+// ---------- Tabs inside a family: Kris Kringle · My wish list · Board (+ Account) ----------
+const VIEW_KEY = "kk.view";
+const VIEWS = ["kk", "wish", "board", "account"];
+let currentView = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1)
+  : (() => { try { return localStorage.getItem(VIEW_KEY) || "kk"; } catch { return "kk"; } })();
+
+function setView(v) {
+  if (!VIEWS.includes(v)) v = "kk";
+  // Leaving the Kris Kringle tab hides the secret details again.
+  if (v !== "kk" && secretsShown) setSecrets(false);
+  currentView = v;
+  document.querySelectorAll("[data-pane]").forEach(p => p.classList.toggle("hidden", p.dataset.pane !== v));
+  document.querySelectorAll("#viewTabs [data-view]").forEach(b => {
+    b.classList.toggle("active", b.dataset.view === v);
+    b.setAttribute("aria-current", b.dataset.view === v ? "page" : "false");
+  });
+  $("accountLink").classList.toggle("active", v === "account");
+  try { localStorage.setItem(VIEW_KEY, v === "account" ? "kk" : v); } catch {}
+  if (location.hash.slice(1) !== v) history.replaceState(null, "", "#" + v);
+}
+$("viewTabs").addEventListener("click", e => {
+  const v = e.target.closest("[data-view]")?.dataset.view;
+  if (v) { setView(v); window.scrollTo({ top: $("viewTabs").offsetTop - 12, behavior: "smooth" }); }
+});
+$("accountLink").addEventListener("click", e => { e.preventDefault(); setView("account"); });
+addEventListener("hashchange", () => { const v = location.hash.slice(1); if (VIEWS.includes(v) && v !== currentView) setView(v); });
 
 // ---------- Boot ----------
 async function boot() {
@@ -572,11 +633,9 @@ async function boot() {
     return;
   }
 
-  const ids = account.families.map(f => f.family_id);
-  const pick = ids.includes(remembered()) ? remembered() : ids[0];
-  try { await loadFamily(pick); } catch (err) { showMsg($("error"), err.message); }
-  renderTabs();
-  renderFooter();
+  show("accountLink");
+  if (account.families.length > 1) { showPicker(); renderFooter(); return; }
+  try { await switchFamily(account.families[0].family_id); } catch (err) { showMsg($("error"), err.message); }
 }
 
 // Re-render only when who's signed in actually changes (browsers can re-fire SIGNED_IN on tab focus).
