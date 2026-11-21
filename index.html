@@ -403,20 +403,16 @@ async function loadFamily(id) {
 let board = null, showAllPosts = false;
 
 function pollHtml(p) {
-  const total = p.counts.reduce((a, b) => a + b, 0);
+  // Totals stay private: members only see their own choice and how many people have voted.
   const open = p.status === "open";
   return `<div class="poll">
     <div class="poll-q">${esc(p.question)}</div>
     ${!open && p.decision != null ? `<div class="msg ok">✅ Decided: <strong>${esc(p.options[p.decision])}</strong></div>` : ""}
-    <div class="poll-options">${p.options.map((o, i) => {
-      const pct = total ? Math.round(p.counts[i] / total * 100) : 0;
+    ${open ? `<div class="poll-options">${p.options.map((o, i) => {
       const mine = p.my_vote === i;
-      return `<button class="poll-opt ${mine ? "mine" : ""} ${!open && p.decision === i ? "winner" : ""}" ${open ? `data-vote="${p.id}" data-opt="${i}"` : "disabled"}>
-        <span class="bar" style="width:${pct}%"></span>
-        <span class="label">${mine ? "✓ " : ""}${esc(o)}</span><span class="count">${p.counts[i]}</span>
-      </button>`;
+      return `<button class="poll-opt ${mine ? "mine" : ""}" data-vote="${p.id}" data-opt="${i}"><span class="label">${mine ? "✓ " : ""}${esc(o)}</span></button>`;
     }).join("")}</div>
-    <p class="note">${open ? `${p.voters} of ${board.member_count} voted · votes are private · tap to ${p.my_vote == null ? "vote" : "change your vote"}` : `Closed · ${p.voters} voted`}</p>
+    <p class="note">${p.voters} of ${board.member_count} voted · ${p.my_vote == null ? "tap an option to vote" : "your vote is private · tap another option to change it"}</p>` : ""}
   </div>`;
 }
 
