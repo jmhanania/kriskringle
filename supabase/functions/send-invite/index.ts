@@ -6,6 +6,8 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SITE_URL = Deno.env.get("SITE_URL") ?? "https://kriskringle.jacobhanania.com";
 const FROM = Deno.env.get("EMAIL_FROM") ?? "Kris Kringle <kriskringle@jacobhanania.com>";
+// kriskringle@jacobhanania.com can't receive replies, so every email says so.
+const NO_REPLY = `<p style="font-size:12px;color:#9a8c7e;margin:24px 0 0;padding-top:12px;border-top:1px solid #eadfca">This is an automated email from Kris Kringle, so please don't reply: this address can't receive messages. Questions? Ask your family's organiser.</p>`;
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -40,7 +42,7 @@ Deno.serve(async (req) => {
   <p style="margin:0 0 12px">Use this email address (<strong>${esc(p.email)}</strong>) and you'll land in the family automatically. No password needed: we'll email you a sign-in code.</p>
   <p style="margin:20px 0 24px"><a href="${SITE_URL}" style="background:#b3201e;color:#ffffff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold">Create my account</a></p>
   <p style="font-size:13px;color:#7a6a5c;margin:0">Not expecting this? You can ignore this email.</p>
-</div>`;
+${NO_REPLY}</div>`;
 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",

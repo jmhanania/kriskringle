@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=Lora:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="theme.css?v=2026-11-22b">
+<link rel="stylesheet" href="theme.css?v=2026-11-22c">
 </head>
 <body>
 <canvas id="snow"></canvas>
@@ -49,6 +49,36 @@
           <button type="button" class="hidden" id="pCancel">Cancel</button>
         </div>
       </form>
+    </section>
+
+    <section>
+      <h2>📣 Family board <small>Everyone sees this on their page</small></h2>
+
+      <h3>Post an update</h3>
+      <form id="postForm">
+        <div class="field"><label for="postBody">Message</label><textarea id="postBody" maxlength="2000" required placeholder="e.g. We're doing the exchange at Mom's on the 25th. Bring your gift wrapped!"></textarea></div>
+        <label class="check"><input type="checkbox" id="postEmail" checked> Also email everyone</label>
+        <div class="row"><button class="primary" type="submit" id="postBtn">Post update</button></div>
+      </form>
+      <div id="postMsg"></div>
+      <ul class="list mt" id="postList"></ul>
+
+      <hr class="divider">
+      <h3>Polls</h3>
+      <p class="hint">Ask the family to decide something. Votes are private: everyone sees totals, not who picked what.</p>
+      <div class="actions">
+        <button type="button" class="small" data-template="type">🎁 Gift type</button>
+        <button type="button" class="small" data-template="budget">💰 Budget</button>
+        <button type="button" class="small" data-template="date">🗓️ Gift day</button>
+      </div>
+      <form id="pollForm" class="mt">
+        <div class="field"><label for="pollQ">Question</label><input type="text" id="pollQ" maxlength="200" required placeholder="e.g. What kind of gifts?"></div>
+        <div class="field"><label for="pollOpts">Options (one per line, 2 to 8)</label><textarea id="pollOpts" required placeholder="Real gifts&#10;Gag gifts&#10;One of each"></textarea></div>
+        <label class="check"><input type="checkbox" id="pollEmail" checked> Email everyone about the poll</label>
+        <div class="row"><button class="primary" type="submit" id="pollBtn">Start poll</button></div>
+      </form>
+      <div id="pollMsg"></div>
+      <div id="pollList" class="stack mt"></div>
     </section>
 
     <section id="managedCard" class="hidden">
@@ -104,8 +134,8 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-11-22b"></script>
-<script src="common.js?v=2026-11-22b"></script>
+<script src="config.js?v=2026-11-22c"></script>
+<script src="common.js?v=2026-11-22c"></script>
 <script>
 const familyId = new URLSearchParams(location.search).get("f");
 let state = null;          // { admin_id, family, people, events }
@@ -177,7 +207,14 @@ function generateDraw(people, rules) {
 }
 
 // ---------- Loading ----------
+let board = null;
+async function loadBoard() {
+  board = await rpc("get_board", { p_family: familyId });
+  renderBoardAdmin();
+}
+
 async function load() {
+  loadBoard().catch(err => showMsg($("pollMsg"), err.message));
   state = await rpc("admin_get_state", { p_family: familyId });
   if (!state.events.some(e => e.id === selectedId)) selectedId = state.events[0]?.id ?? null;
   render();
@@ -378,6 +415,11 @@ function renderEvents() {
       <span class="muted">${details || "No date or budget set"}</span>
       <button class="small" id="editEvent">Edit details</button>
     </div>
+    <form id="rulesForm" class="mt">
+      <div class="field"><label for="rulesText">📜 House rules <span class="muted">(everyone sees these)</span></label>
+        <textarea id="rulesText" maxlength="1000" placeholder="e.g. Real gifts, $50 max. Bring it wrapped to Mom's on the 25th.">${esc(ev.rules || "")}</textarea></div>
+      <div class="row"><button class="small" type="submit">Save rules</button></div>
+    </form>
 
     <hr class="divider">
     <h3>👥 Who's in? <small class="muted">${partList.length} selected</small></h3>
@@ -609,6 +651,111 @@ $("eventBody").addEventListener("change", e => {
   const ev = selected();
   const parts = e.target.checked ? [...ev.participants, id] : ev.participants.filter(x => x !== id);
   saveSetup(ev, parts, ev.exclusions);
+});
+
+// ---------- Family board (organiser) ----------
+const TEMPLATES = {
+  type: ["What kind of gifts this year?", "Real gifts\nGag gifts\nOne of each"],
+  budget: ["What should the budget be?", "$25\n$50\n$75\n$100"],
+  date: ["When should we do the gift exchange?", "Christmas Eve\nChristmas Day\nBoxing Day"],
+};
+
+function renderBoardAdmin() {
+  $("postList").innerHTML = board.posts.map(p => `<li>
+      <div class="grow"><div class="post-meta">${esc(p.author || "Organiser")} · ${new Date(p.at).toLocaleDateString("en-CA", { month: "short", day: "numeric" })}</div>${esc(p.body).replace(/\n/g, "<br>")}</div>
+      <button class="small link danger" data-delpost="${p.id}">Delete</button></li>`).join("");
+  $("pollList").innerHTML = board.polls.map(p => {
+    const total = p.counts.reduce((a, b) => a + b, 0);
+    const open = p.status === "open";
+    return `<div class="rules">
+      <div class="row between"><strong>${esc(p.question)}</strong><span class="badge ${open ? "ok" : ""}">${open ? "Open" : "Closed"}</span></div>
+      <ul class="list mt">${p.options.map((o, i) => `<li><span>${p.decision === i ? "✅ " : ""}${esc(o)}</span><span class="muted">${p.counts[i]} vote${p.counts[i] === 1 ? "" : "s"}${total ? ` · ${Math.round(p.counts[i] / total * 100)}%` : ""}</span></li>`).join("")}</ul>
+      <p class="note">${p.voters} of ${board.member_count} voted</p>
+      <div class="actions mt">
+        ${open
+          ? `<select data-decision="${p.id}" aria-label="Decision"><option value="">Close without a decision</option>${p.options.map((o, i) => `<option value="${i}">Decide: ${esc(o)}</option>`).join("")}</select>
+             <button class="small" data-closepoll="${p.id}">Close poll</button>`
+          : `<button class="small" data-reopen="${p.id}">Reopen</button>`}
+        <button class="small link danger" data-delpoll="${p.id}">Delete</button>
+      </div>
+    </div>`;
+  }).join("") || `<p class="empty">No polls yet.</p>`;
+}
+
+// Emails the family about a new update or poll. Returns a short status message.
+async function broadcast(kind, id) {
+  const { data, error } = await sb.functions.invoke("notify-family", { body: { family: familyId, kind, id } });
+  if (!error) return ` Emailed ${data.sent} ${data.sent === 1 ? "person" : "people"}.`;
+  let msg = error.message;
+  try { msg = (await error.context.json()).error || msg; } catch {}
+  return ` (The email didn't send: ${msg})`;
+}
+
+$("postForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("postBtn").disabled = true;
+  try {
+    const id = await rpc("admin_post_update", { p_family: familyId, p_body: $("postBody").value });
+    const note = $("postEmail").checked ? await broadcast("post", id) : "";
+    $("postBody").value = "";
+    await loadBoard();
+    showMsg($("postMsg"), "Posted ✓" + note, "ok");
+  } catch (err) { showMsg($("postMsg"), err.message); }
+  finally { $("postBtn").disabled = false; }
+});
+
+document.querySelectorAll("[data-template]").forEach(b => b.addEventListener("click", () => {
+  const [q, opts] = TEMPLATES[b.dataset.template];
+  $("pollQ").value = q; $("pollOpts").value = opts; $("pollQ").focus();
+}));
+
+$("pollForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const options = $("pollOpts").value.split("\n").map(s => s.trim()).filter(Boolean);
+  if (options.length < 2 || options.length > 8) { showMsg($("pollMsg"), ERRORS.poll_options); return; }
+  $("pollBtn").disabled = true;
+  try {
+    const id = await rpc("admin_create_poll", { p_family: familyId, p_question: $("pollQ").value, p_options: options });
+    const note = $("pollEmail").checked ? await broadcast("poll", id) : "";
+    $("pollForm").reset(); $("pollEmail").checked = true;
+    await loadBoard();
+    showMsg($("pollMsg"), "Poll started ✓" + note, "ok");
+  } catch (err) { showMsg($("pollMsg"), err.message); }
+  finally { $("pollBtn").disabled = false; }
+});
+
+$("postList").addEventListener("click", async e => {
+  const id = e.target.dataset.delpost;
+  if (!id || !confirm("Delete this update? It disappears from everyone's page.")) return;
+  try { await rpc("admin_delete_post", { p_family: familyId, p_post: id }); await loadBoard(); }
+  catch (err) { showMsg($("postMsg"), err.message); }
+});
+
+$("pollList").addEventListener("click", async e => {
+  const t = e.target;
+  try {
+    if (t.dataset.closepoll) {
+      const v = document.querySelector(`[data-decision="${t.dataset.closepoll}"]`).value;
+      await rpc("admin_close_poll", { p_family: familyId, p_poll: t.dataset.closepoll, p_decision: v === "" ? null : +v });
+      showMsg($("pollMsg"), v === "" ? "Poll closed." : "Poll closed. The decision now shows on everyone's page ✓", "ok");
+    } else if (t.dataset.reopen) {
+      await rpc("admin_reopen_poll", { p_family: familyId, p_poll: t.dataset.reopen });
+    } else if (t.dataset.delpoll) {
+      if (!confirm("Delete this poll and its votes?")) return;
+      await rpc("admin_delete_poll", { p_family: familyId, p_poll: t.dataset.delpoll });
+    } else return;
+    await loadBoard();
+  } catch (err) { showMsg($("pollMsg"), err.message); }
+});
+
+$("eventBody").addEventListener("submit", async e => {
+  if (e.target.id !== "rulesForm") return;
+  e.preventDefault();
+  try {
+    await rpc("admin_set_rules", { p_family: familyId, p_event: selectedId, p_rules: $("rulesText").value });
+    await load();
+    showMsg($("eventMsg"), "House rules saved ✓ Everyone sees them on their page.", "ok");
+  } catch (err) { showMsg($("eventMsg"), err.message); }
 });
 
 $("signOut").addEventListener("click", signOut);

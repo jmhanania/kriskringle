@@ -6,6 +6,8 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SITE_URL = Deno.env.get("SITE_URL") ?? "https://kriskringle.jacobhanania.com";
 const FROM = Deno.env.get("EMAIL_FROM") ?? "Kris Kringle <kriskringle@jacobhanania.com>";
+// kriskringle@jacobhanania.com can't receive replies, so every email says so.
+const NO_REPLY = `<p style="font-size:12px;color:#9a8c7e;margin:24px 0 0;padding-top:12px;border-top:1px solid #eadfca">This is an automated email from Kris Kringle, so please don't reply: this address can't receive messages. Questions? Ask your family's organiser.</p>`;
 
 const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 const money = (cents: number | null) =>
@@ -24,7 +26,7 @@ function email(r: Reminder, to: Reminder["recipients"][number]) {
   const button = (label: string) =>
     `<p style="margin:20px 0 24px"><a href="${SITE_URL}" style="background:#b3201e;color:#ffffff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold">${label}</a></p>`;
   const wrap = (title: string, inner: string) =>
-    `<div style="font-family:Georgia,serif;max-width:480px;margin:0 auto;padding:24px;color:#2a1f1a"><h2 style="color:#b3201e;margin:0 0 12px">${title}</h2><p style="margin:0 0 12px">Hi ${esc(to.name)},</p>${inner}</div>`;
+    `<div style="font-family:Georgia,serif;max-width:480px;margin:0 auto;padding:24px;color:#2a1f1a"><h2 style="color:#b3201e;margin:0 0 12px">${title}</h2><p style="margin:0 0 12px">Hi ${esc(to.name)},</p>${inner}${NO_REPLY}</div>`;
   if (r.kind === "wishlist_week") {
     return {
       subject: `🎁 A week to go! Your Kris Kringle needs gift ideas`,

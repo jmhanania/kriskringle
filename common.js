@@ -27,6 +27,10 @@ const ERRORS = {
   invited_recently: "They were invited less than an hour ago. Give it a little time before resending.",
   already_joined: "They've already created their account.",
   no_email: "Add an email address for them first.",
+  poll_closed: "That poll has closed.",
+  poll_options: "A poll needs between 2 and 8 options.",
+  too_many_polls: "There are already 10 open polls. Close one first.",
+  too_many_posts: "That's a lot of updates for one day! Try again tomorrow.",
   last_organiser: "You're this family's only organiser. Make someone else an organiser first (on the organiser page), then try again.",
 };
 

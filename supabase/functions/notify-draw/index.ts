@@ -6,6 +6,8 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SITE_URL = Deno.env.get("SITE_URL") ?? "https://kriskringle.jacobhanania.com";
 const FROM = Deno.env.get("EMAIL_FROM") ?? "Kris Kringle <kriskringle@jacobhanania.com>";
+// kriskringle@jacobhanania.com can't receive replies, so every email says so.
+const NO_REPLY = `<p style="font-size:12px;color:#9a8c7e;margin:24px 0 0;padding-top:12px;border-top:1px solid #eadfca">This is an automated email from Kris Kringle, so please don't reply: this address can't receive messages. Questions? Ask your family's organiser.</p>`;
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -38,7 +40,7 @@ function emailHtml(name: string, family: string, event: { name: string; exchange
   <p style="margin:0 0 24px"><a href="${SITE_URL}" style="background:#b3201e;color:#ffffff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold">${action}</a></p>
   <p style="margin:0 0 8px">While you're there, add a few ideas to your own wish list so your Kris Kringle knows what to get you.</p>
   <p style="font-size:13px;color:#7a6a5c;margin:16px 0 0">🤫 Remember, it's a secret!</p>
-</div>`;
+${NO_REPLY}</div>`;
 }
 
 Deno.serve(async (req) => {

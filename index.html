@@ -20,7 +20,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=Lora:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="theme.css?v=2026-11-22b">
+<link rel="stylesheet" href="theme.css?v=2026-11-22c">
 </head>
 <body>
 <canvas id="snow"></canvas>
@@ -101,6 +101,11 @@
 
   <!-- Signed in, viewing a family -->
   <div id="page" class="hidden">
+    <section id="boardCard" class="hidden">
+      <h2>📣 Family board</h2>
+      <div id="board"></div>
+    </section>
+
     <section id="revealCard" class="hidden">
       <h2>🎉 The big reveal</h2>
       <p>Your Kris Kringle was…</p>
@@ -169,8 +174,8 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-11-22b"></script>
-<script src="common.js?v=2026-11-22b"></script>
+<script src="config.js?v=2026-11-22c"></script>
+<script src="common.js?v=2026-11-22c"></script>
 <script>
 const FAMILY_KEY = "kk.family";
 let account = null;   // { email, is_super_admin, families: [...] }
@@ -389,9 +394,63 @@ document.addEventListener("visibilitychange", () => { if (document.hidden && sec
 
 async function loadFamily(id) {
   familyId = id; remember(id);
-  data = await rpc("get_my_page", { p_family: id });
+  [data, board] = await Promise.all([rpc("get_my_page", { p_family: id }), rpc("get_board", { p_family: id })]);
   render();
+  renderBoard();
 }
+
+// ---------- Family board: house rules, polls, organiser updates ----------
+let board = null, showAllPosts = false;
+
+function pollHtml(p) {
+  const total = p.counts.reduce((a, b) => a + b, 0);
+  const open = p.status === "open";
+  return `<div class="poll">
+    <div class="poll-q">${esc(p.question)}</div>
+    ${!open && p.decision != null ? `<div class="msg ok">✅ Decided: <strong>${esc(p.options[p.decision])}</strong></div>` : ""}
+    <div class="poll-options">${p.options.map((o, i) => {
+      const pct = total ? Math.round(p.counts[i] / total * 100) : 0;
+      const mine = p.my_vote === i;
+      return `<button class="poll-opt ${mine ? "mine" : ""} ${!open && p.decision === i ? "winner" : ""}" ${open ? `data-vote="${p.id}" data-opt="${i}"` : "disabled"}>
+        <span class="bar" style="width:${pct}%"></span>
+        <span class="label">${mine ? "✓ " : ""}${esc(o)}</span><span class="count">${p.counts[i]}</span>
+      </button>`;
+    }).join("")}</div>
+    <p class="note">${open ? `${p.voters} of ${board.member_count} voted · votes are private · tap to ${p.my_vote == null ? "vote" : "change your vote"}` : `Closed · ${p.voters} voted`}</p>
+  </div>`;
+}
+
+function renderBoard() {
+  const ex = board.exchange;
+  const polls = board.polls.filter(p => p.status === "open" || p.decision != null).slice(0, 5);
+  const posts = showAllPosts ? board.posts : board.posts.slice(0, 3);
+  const has = ex?.rules || polls.length || board.posts.length;
+  $("boardCard").classList.toggle("hidden", !has);
+  if (!has) return;
+  const facts = ex ? [ex.exchange_date && `🗓️ ${prettyDate(ex.exchange_date)}`, ex.budget_cents != null && `💰 ${money(ex.budget_cents)}`].filter(Boolean) : [];
+  $("board").innerHTML = `
+    ${ex && (ex.rules || facts.length) ? `<div class="rules">
+      <div class="muted">${esc(ex.name)}${facts.length ? " · " + facts.join(" · ") : ""}</div>
+      ${ex.rules ? `<div class="rules-text">📜 ${esc(ex.rules).replace(/\n/g, "<br>")}</div>` : ""}
+    </div>` : ""}
+    ${polls.map(pollHtml).join("")}
+    ${board.posts.length ? `<ul class="posts">${posts.map(p => `<li>
+        <div class="post-meta">${esc(p.author || "Organiser")} · ${new Date(p.at).toLocaleDateString("en-CA", { month: "short", day: "numeric" })}</div>
+        <div>${esc(p.body).replace(/\n/g, "<br>")}</div>
+      </li>`).join("")}</ul>
+      ${board.posts.length > 3 ? `<button class="small link" id="morePosts">${showAllPosts ? "Show fewer" : `Show all ${board.posts.length} updates`}</button>` : ""}` : ""}`;
+}
+
+$("board").addEventListener("click", async e => {
+  if (e.target.id === "morePosts") { showAllPosts = !showAllPosts; renderBoard(); return; }
+  const btn = e.target.closest("[data-vote]");
+  if (!btn) return;
+  try {
+    await rpc("vote", { p_family: familyId, p_poll: btn.dataset.vote, p_option: +btn.dataset.opt });
+    board = await rpc("get_board", { p_family: familyId });
+    renderBoard();
+  } catch (err) { alert(err.message); }
+});
 
 function resetForm() {
   editingId = null;

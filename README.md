@@ -39,6 +39,8 @@ Tables can't be read directly. Signed-in users can only call database functions,
 - **Emails:** sign-in codes and "names are drawn" notifications go out through Resend from `kriskringle@jacobhanania.com`. The free plan allows 100 per day.
 - **Draw notifications:** sent by the `notify-draw` Supabase Edge Function (`supabase/functions/notify-draw`), which needs a `RESEND_API_KEY` secret.
 - **Anonymous messages:** questions, replies and nudges are emailed by the `notify-message` edge function.
+- **Family board:** organisers post updates and run polls (votes are private, only totals are shown) and set house rules per exchange. Updates and polls can be emailed to the family by the `notify-family` edge function.
+- **No-reply:** every email comes from `kriskringle@jacobhanania.com`, which can't receive replies, and says so in its footer (including the two Supabase sign-in templates).
 - **Reminders:** a daily `pg_cron` job (9am Toronto) calls the `send-reminders` edge function, which emails anyone with an empty wish list a week before gift day, and everyone 2 days before. Each reminder goes out once per exchange; organisers can switch them off per exchange.
 
 ## Follow-ups
@@ -50,4 +52,4 @@ Tables can't be read directly. Signed-in users can only call database functions,
 
 ## Releasing changes
 
-Browsers cache `theme.css`, `common.js` and `config.js` for a few minutes, so every page links to them with a version (`theme.css?v=2026-11-22b`). **When you change any of those three files, bump the version in every `.html` file** (search for `?v=`), or visitors may briefly get the new page with old styles or scripts.
+Browsers cache `theme.css`, `common.js` and `config.js` for a few minutes, so every page links to them with a version (`theme.css?v=2026-11-22c`). **When you change any of those three files, bump the version in every `.html` file** (search for `?v=`), or visitors may briefly get the new page with old styles or scripts.
