@@ -22,6 +22,7 @@
     <h2>🎄 Start your family</h2>
     <form id="startForm">
       <div class="row"><input type="text" id="invite" placeholder="Invite code, e.g. KK-XXXXXXXX" autocomplete="off" required></div>
+      <p class="muted" id="inviteHelp" style="margin:6px 0 0">The site is invite-only. Your code comes from whoever sent you this page. If they sent a sign-up link, it's filled in for you.</p>
       <div class="row" style="margin-top:8px">
         <input type="text" id="family" placeholder="Family name, e.g. Smith" maxlength="60" required>
         <input type="text" id="name" placeholder="Your name" maxlength="80" required>
@@ -56,7 +57,7 @@
 <script src="common.js"></script>
 <script>
 const params = new URLSearchParams(location.search);
-if (params.get("invite")) $("invite").value = params.get("invite");
+if (params.get("invite")) { $("invite").value = params.get("invite"); $("inviteHelp").textContent = "✓ Invite code filled in from your link."; }
 
 $("startForm").addEventListener("submit", async e => {
   e.preventDefault();
