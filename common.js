@@ -89,6 +89,28 @@ document.addEventListener("click", e => {
   });
 });
 
+// Pill tabs (nav#viewTabs + .pane[data-pane]). Lands on `fallback` unless the link names a tab (#people).
+let tabViews = [];
+function setTab(v) {
+  if (!tabViews.includes(v)) v = tabViews[0];
+  document.querySelectorAll("[data-pane]").forEach(p => p.classList.toggle("hidden", p.dataset.pane !== v));
+  document.querySelectorAll("#viewTabs [data-view]").forEach(b => {
+    b.classList.toggle("active", b.dataset.view === v);
+    b.setAttribute("aria-current", b.dataset.view === v ? "page" : "false");
+  });
+  if (location.hash.slice(1) !== v) history.replaceState(null, "", location.pathname + location.search + "#" + v);
+}
+function initTabs(views, fallback) {
+  tabViews = views;
+  const nav = document.getElementById("viewTabs");
+  nav.addEventListener("click", e => {
+    const v = e.target.closest("[data-view]")?.dataset.view;
+    if (v) { setTab(v); window.scrollTo({ top: nav.offsetTop - 12, behavior: "smooth" }); }
+  });
+  addEventListener("hashchange", () => { const v = location.hash.slice(1); if (tabViews.includes(v)) setTab(v); });
+  setTab(views.includes(location.hash.slice(1)) ? location.hash.slice(1) : fallback);
+}
+
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const $ = id => document.getElementById(id);
 const siteUrl = () => new URL("./", location.href).href;

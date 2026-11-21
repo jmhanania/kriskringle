@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=Lora:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="theme.css?v=2026-11-22g">
+<link rel="stylesheet" href="theme.css?v=2026-11-22h">
 </head>
 <body>
 <canvas id="snow"></canvas>
@@ -37,26 +37,35 @@
 
   <div id="error"></div>
 
-  <section id="backupCard" class="hidden">
+  <div id="tabsWrap" class="hidden">
+    <nav class="segmented" id="viewTabs" aria-label="Sections">
+      <button data-view="families">🏡 Families</button>
+      <button data-view="backup">💾 Backup</button>
+    </nav>
+    <div class="pane" data-pane="families">
+  <section id="app">
+    <h2>🏡 Families <small id="famCount"></small></h2>
+    <div id="famMsg"></div>
+    <ul class="list" id="families"></ul>
+  </section>
+    </div>
+    <div class="pane" data-pane="backup">
+  <section id="backupCard">
     <h2>💾 Backup</h2>
     <p>The free database has no automatic backups. Download one now and then (say, after each draw) and keep it somewhere safe, like your Google Drive.</p>
     <p class="hint">⚠️ The file contains <strong>everything</strong>, including every family's draws, wish lists and emails. Keep it private and don't open it unless you need to restore something.</p>
     <div class="row"><button id="backupBtn">Download backup</button></div>
     <div id="backupMsg"></div>
   </section>
-
-  <section id="app" class="hidden">
-    <h2>🏡 Families <small id="famCount"></small></h2>
-    <div id="famMsg"></div>
-    <ul class="list" id="families"></ul>
-  </section>
+    </div>
+  </div>
 
   <footer>Merry Christmas 🎄</footer>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-11-22g"></script>
-<script src="common.js?v=2026-11-22g"></script>
+<script src="config.js?v=2026-11-22h"></script>
+<script src="common.js?v=2026-11-22h"></script>
 <script>
 let state = null;
 
@@ -78,8 +87,7 @@ async function load() {
         </div>
         <button class="small link danger" data-del="${f.id}">Delete</button>
     </li>`).join("") || `<li class="empty">No families yet.</li>`;
-  $("app").classList.remove("hidden");
-  $("backupCard").classList.remove("hidden");
+  $("tabsWrap").classList.remove("hidden");
 }
 
 $("backupBtn").addEventListener("click", async () => {
@@ -121,6 +129,7 @@ $("signOut").addEventListener("click", signOut);
   const user = await requireUser();
   $("whoami").textContent = user.email;
   rpc("my_account").then(acc => renderNav(acc, "super", null)).catch(() => {});
+  initTabs(["families", "backup"], "families");
   try { await load(); } catch (err) { showMsg($("error"), err.message); }
 })();
 </script>

@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=Lora:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="theme.css?v=2026-11-22g">
+<link rel="stylesheet" href="theme.css?v=2026-11-22h">
 </head>
 <body>
 <canvas id="snow"></canvas>
@@ -38,6 +38,12 @@
   <div id="error"></div>
 
   <div id="app" class="hidden">
+    <nav class="segmented" id="viewTabs" aria-label="Sections">
+      <button data-view="board">📣 Board</button>
+      <button data-view="people">👨‍👩‍👧‍👦 People</button>
+      <button data-view="exchange">🎄 Exchange</button>
+    </nav>
+    <div class="pane" data-pane="people">
     <section>
       <h2><span>👨‍👩‍👧‍👦 The family <small id="famCount"></small></span><button class="small link" id="renameFamily">Rename</button></h2>
       <div id="famMsg"></div>
@@ -56,7 +62,9 @@
         </div>
       </form>
     </section>
+    </div>
 
+    <div class="pane" data-pane="board">
     <section>
       <h2>📣 Family board <small>Everyone sees this on their page</small></h2>
 
@@ -86,7 +94,9 @@
       <div id="pollMsg"></div>
       <div id="pollList" class="stack mt"></div>
     </section>
+    </div>
 
+    <div class="pane" data-pane="people">
     <section id="managedCard" class="hidden">
       <h2><span>🎁 <span id="managedName"></span>'s wish list</span><button class="small" id="managedClose">Done</button></h2>
       <p class="hint">They don't have an account, so organisers keep this list for them.</p>
@@ -102,7 +112,9 @@
       </form>
       <div id="managedMsg"></div>
     </section>
+    </div>
 
+    <div class="pane" data-pane="exchange">
     <section>
       <h2>🎄 Exchange</h2>
       <div class="row">
@@ -134,14 +146,15 @@
       <div id="eventBody"></div>
       <div id="eventMsg"></div>
     </section>
+    </div>
   </div>
 
   <footer><span class="family-footer"></span></footer>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-11-22g"></script>
-<script src="common.js?v=2026-11-22g"></script>
+<script src="config.js?v=2026-11-22h"></script>
+<script src="common.js?v=2026-11-22h"></script>
 <script>
 const familyId = new URLSearchParams(location.search).get("f");
 let state = null;          // { admin_id, family, people, events }
@@ -357,6 +370,7 @@ $("family").addEventListener("click", async e => {
 
 // ---------- Wish lists for people without accounts ----------
 async function openManaged(p) {
+  setTab("people");
   managedId = p.id;
   $("managedName").textContent = p.name;
   showMsg($("managedMsg"), "");
@@ -772,6 +786,7 @@ $("signOut").addEventListener("click", signOut);
   $("whoami").textContent = user.email;
   if (!familyId) { location.replace("./"); return; }
   rpc("my_account").then(acc => renderNav(acc, "organise", familyId)).catch(() => {});
+  initTabs(["board", "people", "exchange"], "board");
   try { await load(); }
   catch (e) { showMsg($("error"), e.message); }
 })();
