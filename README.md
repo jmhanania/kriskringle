@@ -52,4 +52,4 @@ Tables can't be read directly. Signed-in users can only call database functions,
 
 ## Releasing changes
 
-Browsers cache `theme.css`, `common.js` and `config.js` for a few minutes, so every page links to them with a version (`theme.css?v=2026-11-22i`). **When you change any of those three files, bump the version in every `.html` file** (search for `?v=`), or visitors may briefly get the new page with old styles or scripts.
+Browsers cache `theme.css`, `common.js` and `config.js` for a few minutes, so every page links to them with a version (`theme.css?v=2026-11-22j`). **When you change any of those three files, bump the version in every `.html` file** (search for `?v=`), or visitors may briefly get the new page with old styles or scripts.

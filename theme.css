@@ -330,3 +330,6 @@ details.acct .menu-pop { min-width: 220px; }
   .menu-nav:not(:empty) { display: flex; flex-direction: column; border-bottom: 1px solid var(--line); padding-bottom: var(--s1); margin-bottom: var(--s1); }
   .menu-nav a.active { font-weight: 600; }
 }
+/* The account button reads "Account ▾" on desktop and "☰ Menu" on phones (where it also holds Organise / Super admin) */
+.lbl-mob { display: none; }
+@media (max-width: 600px) { .lbl-desk { display: none; } .lbl-mob { display: inline; } }
