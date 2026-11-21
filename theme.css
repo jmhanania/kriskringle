@@ -247,3 +247,5 @@ footer a { color: var(--on-pine); }
 /* Buttons sitting next to labelled fields line up with the inputs, not the labels */
 .row:has(> .field) { align-items: flex-end; }
 td.status { text-align: right; }
+/* Fields only share width inside a .row; stacked in a form/column they keep their natural height */
+form > .field, .stack > .field, .msgbox .field { flex: 0 0 auto; }
