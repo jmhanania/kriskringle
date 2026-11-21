@@ -21,6 +21,40 @@
 
   <div id="error"></div>
 
+  <div id="landing" class="hidden">
+    <section id="welcomeBack" class="hidden">
+      <h2>👋 Welcome back</h2>
+      <p style="margin:0 0 12px">You're signed in on this device as <strong id="wbName"></strong>.</p>
+      <div class="row">
+        <a class="btn primary-btn" id="wbGo">Go to my page →</a>
+        <button class="link" id="wbForget">Not you? Forget this device</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>🎁 How it works</h2>
+      <ol class="steps">
+        <li><strong>One person organises.</strong> They start your family's Kris Kringle and add everyone.</li>
+        <li><strong>Names go in the Santa hat.</strong> The draw is random, and it can keep couples from drawing each other.</li>
+        <li><strong>Everyone gets their own private page</strong> showing who they're buying for, that person's wish list, and a place to write their own.</li>
+      </ol>
+    </section>
+
+    <div class="paths">
+      <section>
+        <h2>🎄 I'm joining my family</h2>
+        <p>Your organiser sends each person a <strong>personal link</strong> by text or email. Open it to see who you're buying for and add your wish list.</p>
+        <p class="muted">Can't find it? Ask your organiser to send it again.</p>
+      </section>
+      <section>
+        <h2>🎅 I'm organising</h2>
+        <p>Set up your family, add everyone, and run the draw. It takes about 5 minutes.</p>
+        <a class="btn primary-btn" href="start.html">Start your family's Kris Kringle →</a>
+        <p class="muted" style="margin-bottom:0">You'll need an invite code from the site owner.</p>
+      </section>
+    </div>
+  </div>
+
   <div id="page" class="hidden">
     <section>
       <h2>🎅 You're buying for…</h2>
@@ -106,15 +140,31 @@ function render() {
   $("page").classList.remove("hidden");
 }
 
+// Remember the last link opened on this device so the plain address can offer "Welcome back".
+const SAVED_KEY = "kk.savedCode";
+const savedCode = () => { try { return localStorage.getItem(SAVED_KEY); } catch { return null; } };
+const saveCode = c => { try { c ? localStorage.setItem(SAVED_KEY, c) : localStorage.removeItem(SAVED_KEY); } catch {} };
+
+async function showLanding() {
+  $("greeting").textContent = "Secret draws and wish lists for the whole family 🎄";
+  document.title = "Kris Kringle Generator";
+  document.querySelectorAll(".family-footer").forEach(el => el.textContent = "Merry Christmas 🎄");
+  $("landing").classList.remove("hidden");
+  const saved = savedCode();
+  if (!saved) return;
+  try {
+    const d = await rpc("get_my_page", { p_code: saved });
+    $("wbName").textContent = `${d.me.name} (${d.family} family)`;
+    $("wbGo").href = "#" + encodeURIComponent(saved);
+    $("welcomeBack").classList.remove("hidden");
+  } catch { saveCode(null); }  // link no longer valid
+}
+
 async function load() {
-  if (!code) {
-    $("greeting").textContent = "Welcome!";
-    $("error").innerHTML = `<div class="msg err">Open this page using the personal link you were sent. Each person has their own.</div>
-      <p class="sub" style="text-align:center;margin-top:16px">Organising for your family? <a href="start.html" style="color:var(--gold)">Start your family's Kris Kringle</a></p>`;
-    return;
-  }
+  if (!code) return showLanding();
   try {
     data = await rpc("get_my_page", { p_code: code });
+    saveCode(code);
     render();
   } catch (e) {
     $("greeting").textContent = "Hmm…";
@@ -177,6 +227,7 @@ $("myList").addEventListener("click", async e => {
   }
 });
 
+$("wbForget").addEventListener("click", () => { saveCode(null); $("welcomeBack").classList.add("hidden"); });
 addEventListener("hashchange", () => location.reload());
 load();
 </script>
