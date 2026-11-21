@@ -1,0 +1,12 @@
+{
+  "name": "Kris Kringle Generator",
+  "short_name": "Kris Kringle",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#082519",
+  "theme_color": "#0f3b2c",
+  "icons": [
+    { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

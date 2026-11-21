@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Hat body, flopping over to the right -->
+  <path d="M10 46 C12 30 20 14 34 10 C44 7 52 12 55 22 C56 26 54 30 51 30 C49 24 45 21 41 23 C47 30 50 38 52 46 Z" fill="#c8102e"/>
+  <path d="M34 10 C44 7 52 12 55 22 C56 26 54 30 51 30 C50 25 47 21 42 21 C40 16 37 12 34 10 Z" fill="#9e0c24"/>
+  <!-- Pompom and fur brim, outlined so they still show on white tab bars -->
+  <circle cx="51" cy="33" r="7" fill="#ffffff" stroke="#d9cdb8" stroke-width="1.5"/>
+  <rect x="5" y="43" width="51" height="13" rx="6.5" fill="#ffffff" stroke="#d9cdb8" stroke-width="1.5"/>
+  <path d="M12 48.5 h37" stroke="#ece4d6" stroke-width="2" stroke-linecap="round"/>
+</svg>
