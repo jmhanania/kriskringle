@@ -47,3 +47,7 @@ Tables can't be read directly. Signed-in users can only call database functions,
 - [ ] **Automatic backups.** Backups are manual right now (super admin → Download backup). Could be automated to somewhere private, e.g. Google Drive.
 - [ ] **Keep-awake job.** GitHub pauses scheduled workflows after ~60 days with no repo activity. Re-enable it from the Actions tab if GitHub emails about it.
 - [ ] **Feature idea:** birthday mode reusing wish lists.
+
+## Releasing changes
+
+Browsers cache `theme.css`, `common.js` and `config.js` for a few minutes, so every page links to them with a version (`theme.css?v=2026-11-22a`). **When you change any of those three files, bump the version in every `.html` file** (search for `?v=`), or visitors may briefly get the new page with old styles or scripts.
