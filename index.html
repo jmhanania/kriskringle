@@ -99,6 +99,12 @@
 
   <!-- Signed in, viewing a family -->
   <div id="page" class="hidden">
+    <section id="revealCard" class="hidden">
+      <h2>🎉 The big reveal</h2>
+      <p style="margin:0">Your Kris Kringle was…</p>
+      <div class="big" id="mySanta"></div>
+    </section>
+
     <section>
       <h2>🎅 You're buying for…</h2>
       <div id="match"></div>
@@ -256,14 +262,18 @@ function render() {
       ${bits.length ? `<div class="muted">${bits.join(" &nbsp;·&nbsp; ")}</div>` : ""}
       <h3>${esc(recipient.name)}'s wish list</h3>
       ${recipient.wishlist.length
-        ? `<ul class="list">${recipient.wishlist.map(w => wishHtml(w, false)).join("")}</ul>`
+        ? `<ul class="list">${recipient.wishlist.map(giftWishHtml).join("")}</ul>
+           <p class="muted" style="margin:6px 0 0; font-size:13px">✓ Ticks are private: only you can see what you've marked as bought.</p>`
         : `<div class="empty">${esc(recipient.name)} hasn't added anything yet. Check back later!</div>`}
+      ${event.revealed ? `<p class="msg ok">🎉 Revealed! ${esc(recipient.name)} can now see it was you.</p>` : ""}
       ${messagingHtml(recipient)}
       <p class="muted" style="margin-top:14px">🤫 Shh, it's a secret!</p>`;
   } else {
     $("match").innerHTML = `<div class="empty">The draw hasn't happened yet. Check back soon! In the meantime, fill in your wish list below 👇</div>`;
   }
 
+  $("revealCard").classList.toggle("hidden", !data.my_santa);
+  $("mySanta").textContent = data.my_santa ? `${data.my_santa}! 🎁` : "";
   const santa = data.santa_thread || [];
   $("santaCard").classList.toggle("hidden", !santa.length);
   $("santaThread").innerHTML = threadHtml(santa, "Your Kris Kringle");
@@ -273,6 +283,19 @@ function render() {
     : `<li class="empty">Nothing yet. Add a few ideas so your Kris Kringle knows what to get you!</li>`;
   show("page");
 }
+
+function giftWishHtml(w) {
+  return wishHtml(w, false)
+    .replace("<li>", `<li class="${w.bought ? "bought" : ""}">`)
+    .replace(/<\/li>$/, `<label class="check bought-box"><input type="checkbox" data-bought="${w.id}" ${w.bought ? "checked" : ""}> Bought</label></li>`);
+}
+
+$("match").addEventListener("change", async e => {
+  const id = e.target.dataset.bought;
+  if (!id) return;
+  try { await rpc("set_bought", { p_family: familyId, p_item: id, p_bought: e.target.checked }); e.target.closest("li").classList.toggle("bought", e.target.checked); }
+  catch (err) { e.target.checked = !e.target.checked; alert(err.message); }
+});
 
 function threadHtml(thread, otherName) {
   return `<ul class="thread">${thread.map(m => m.kind === "nudge"

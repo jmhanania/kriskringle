@@ -78,6 +78,15 @@
           <div class="field narrow"><label for="eBudget">Budget (optional)</label><input type="text" id="eBudget" placeholder="$50" inputmode="decimal"></div>
         </div>
         <div class="row" style="margin-top:8px">
+          <div class="field"><label for="eReveal">Reveal who had who</label>
+            <select id="eReveal">
+              <option value="after_date">Automatically, the day after gift day</option>
+              <option value="manual">When I press "Reveal"</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:8px"><label class="check"><input type="checkbox" id="eReminders" checked> Send reminder emails (a week before to anyone with an empty wish list, and 2 days before to everyone)</label></div>
+        <div class="row" style="margin-top:8px">
           <button type="submit" class="primary" id="eSave">Save</button>
           <button type="button" id="eCancel">Cancel</button>
           <button type="button" class="link" id="eDelete">Delete this exchange</button>
@@ -322,7 +331,8 @@ function renderEvents() {
   const parts = new Set(ev.participants);
   const partList = state.people.filter(p => parts.has(p.id));
   const prev = previousDrawn(ev);
-  const details = [ev.exchange_date && `🗓️ ${prettyDate(ev.exchange_date)}`, ev.budget_cents != null && `💰 ${money(ev.budget_cents)}`].filter(Boolean).join(" · ");
+  const details = [ev.exchange_date && `🗓️ ${prettyDate(ev.exchange_date)}`, ev.budget_cents != null && `💰 ${money(ev.budget_cents)}`,
+    ev.reminders ? "🔔 Reminders on" : "🔕 Reminders off"].filter(Boolean).join(" · ");
 
   $("eventBody").innerHTML = `
     <div class="row" style="margin-top:12px; justify-content:space-between">
@@ -367,6 +377,13 @@ function drawHtml(ev) {
       <button class="primary" id="notifyBtn">📧 Email everyone that names are drawn</button>
     </div>
     <p class="muted" style="margin:6px 0 0">Sends one email to each person with an email address. It doesn't say who they got, only to sign in and look.</p>
+    <h3>🎉 Reveal</h3>
+    ${ev.revealed
+      ? `<p class="msg ok" style="margin:0 0 8px">Revealed! Everyone can now see who had them.</p><button class="small" id="hideReveal">Hide it again</button>`
+      : `<p class="muted" style="margin:0 0 8px">${ev.reveal_mode === "after_date" && ev.exchange_date
+          ? `Reveals automatically the day after ${prettyDate(ev.exchange_date)}.`
+          : ev.reveal_mode === "after_date" ? "Set a gift day to reveal automatically, or reveal it yourself." : "Reveals when you press the button."}</p>
+         <button id="revealNow">🎉 Reveal who had who now</button>`}
     ${waiting.length ? `<p class="muted">Not signed up yet: ${waiting.map(p => esc(p.name)).join(", ")}. ${waiting.some(p => !p.email) ? "For anyone without an account, peek below and let them know in person." : ""}</p>` : ""}
     <table>${rows.map(a => {
       const p = personById(a.giver);
@@ -427,6 +444,7 @@ $("eventForm").addEventListener("submit", async e => {
       p_family: familyId, p_id: editingEvent === "new" ? null : editingEvent, p_name: $("eName").value,
       p_exchange_date: $("eDate").value || null,
       p_budget_cents: $("eBudget").value.trim() ? toCents($("eBudget").value) : null,
+      p_reveal_mode: $("eReveal").value, p_reminders: $("eReminders").checked,
     });
     if (editingEvent === "new") {
       // Start new exchanges with everyone in, and carry over the most recent no-go pairs.
@@ -459,6 +477,7 @@ $("eventBody").addEventListener("click", async e => {
     editingEvent = ev.id;
     $("eName").value = ev.name; $("eDate").value = ev.exchange_date || "";
     $("eBudget").value = ev.budget_cents != null ? ev.budget_cents / 100 : "";
+    $("eReveal").value = ev.reveal_mode; $("eReminders").checked = ev.reminders;
     renderEvents(); return;
   }
   if (t.id === "selAll") { saveSetup(ev, state.people.map(p => p.id), ev.exclusions); return; }
@@ -476,6 +495,13 @@ $("eventBody").addEventListener("click", async e => {
     saveSetup(ev, ev.participants, rules); return;
   }
   if (t.dataset.reveal) { revealed.add(t.dataset.reveal); renderEvents(); return; }
+  if (t.id === "revealNow" || t.id === "hideReveal") {
+    const reveal = t.id === "revealNow";
+    if (reveal && !confirm("Reveal now? Everyone will see who was buying for them.")) return;
+    try { await rpc("admin_set_revealed", { p_family: familyId, p_event: ev.id, p_revealed: reveal }); await load(); }
+    catch (err) { showMsg($("eventMsg"), err.message); }
+    return;
+  }
   if (t.id === "notifyBtn") {
     const withEmail = ev.participants.map(personById).filter(p => p?.email);
     if (!withEmail.length) { showMsg($("eventMsg"), "Nobody in this exchange has an email address."); return; }

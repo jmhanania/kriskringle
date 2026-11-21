@@ -38,10 +38,12 @@ Tables can't be read directly. Signed-in users can only call database functions,
 - **Backups:** the free plan has none, so the super admin page has a **Download backup** button. The file contains everything, including draws and wish lists, so keep it private.
 - **Emails:** sign-in codes and "names are drawn" notifications go out through Resend from `kriskringle@jacobhanania.com`. The free plan allows 100 per day.
 - **Draw notifications:** sent by the `notify-draw` Supabase Edge Function (`supabase/functions/notify-draw`), which needs a `RESEND_API_KEY` secret.
+- **Anonymous messages:** questions, replies and nudges are emailed by the `notify-message` edge function.
+- **Reminders:** a daily `pg_cron` job (9am Toronto) calls the `send-reminders` edge function, which emails anyone with an empty wish list a week before gift day, and everyone 2 days before. Each reminder goes out once per exchange; organisers can switch them off per exchange.
 
 ## Follow-ups
 
 - [ ] **Privacy contact address.** Create an iCloud alias like `kriskringle@jacobhanania.com` (iCloud+ → Custom Email Domain) and add it to `privacy.html`. Currently it says to ask your family's organiser. Worth doing before other families sign up.
 - [ ] **Automatic backups.** Backups are manual right now (super admin → Download backup). Could be automated to somewhere private, e.g. Google Drive.
 - [ ] **Keep-awake job.** GitHub pauses scheduled workflows after ~60 days with no repo activity. Re-enable it from the Actions tab if GitHub emails about it.
-- [ ] **Feature ideas:** automatic reminders before gift day, private "mark as bought" on a giftee's wish list, reveal day (see who had you), and birthday mode reusing wish lists.
+- [ ] **Feature idea:** birthday mode reusing wish lists.

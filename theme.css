@@ -173,3 +173,7 @@ details.account[open] summary { margin-bottom: 12px; }
 .thread li.theirs { align-self: flex-start; }
 .thread li.nudge { align-self: center; max-width: 100%; background: none; border: none; color: var(--muted); font-size: 14px; }
 .thread .who { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 2px; }
+
+/* ---------- Bought ticks ---------- */
+.list > li.bought .wish-title { text-decoration: line-through; opacity: .6; }
+.bought-box { margin-left: auto; }
