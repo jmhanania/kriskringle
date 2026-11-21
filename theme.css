@@ -88,3 +88,30 @@ td.arrow { color: var(--gold); width: 36px; text-align: center; }
 footer { text-align: center; color: #a9c2b2; font-size: 13px; margin-top: 28px; }
 footer a { color: #d9e6dc; }
 .hidden { display: none !important; }
+
+/* ---------- Phones ---------- */
+@media (max-width: 600px) {
+  main { padding: 24px 16px 48px; }
+  section { padding: 22px 16px 16px; }
+  /* 16px+ stops iOS Safari from zooming in when a field is tapped */
+  input[type=text], input[type=email], input[type=tel], input[type=url], input[type=number], input[type=date], select, textarea { font-size: 16px; flex-basis: 100%; }
+  /* Thumb-sized tap targets */
+  button, .btn { min-height: 44px; }
+  button.small, .btn.small { min-height: 40px; padding: 8px 12px; font-size: 14px; }
+  button.link { min-height: 40px; }
+  .row > button, .row > .btn { flex: 1 1 auto; }
+  .chip { padding: 8px 14px; }
+  .chip input, label.check input { width: 20px; height: 20px; }
+  label.check { min-height: 40px; }
+  .list > li .actions { width: 100%; }
+  h2 small { flex-basis: 100%; }
+  /* Draw results: stack each row as a card instead of a 4-column table */
+  table, tbody, tr, td { display: block; width: 100%; }
+  tr { border-top: 1px dashed var(--line); padding: 10px 0; }
+  tr:first-child { border-top: none; }
+  td { border: none; padding: 2px 0; }
+  td.arrow { display: none; }
+  td:nth-child(1) strong::after { content: " buys for"; font-weight: 400; color: var(--muted); }
+  td:last-child .actions { justify-content: flex-start !important; margin-top: 6px; }
+  td[style*="text-align:right"] { text-align: left !important; }
+}
