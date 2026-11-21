@@ -20,7 +20,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=Lora:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="theme.css?v=2026-11-22e">
+<link rel="stylesheet" href="theme.css?v=2026-11-22f">
 </head>
 <body>
 <canvas id="snow"></canvas>
@@ -197,8 +197,8 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-11-22e"></script>
-<script src="common.js?v=2026-11-22e"></script>
+<script src="config.js?v=2026-11-22f"></script>
+<script src="common.js?v=2026-11-22f"></script>
 <script>
 const FAMILY_KEY = "kk.family";
 let account = null;   // { email, is_super_admin, families: [...] }
@@ -424,7 +424,7 @@ async function loadFamily(id) {
   renderBoard();
 }
 
-// ---------- Family board: house rules, polls, organiser updates ----------
+// ---------- Family board: house rules, then updates, then polls ----------
 let board = null, showAllPosts = false;
 
 function pollHtml(p) {
@@ -454,12 +454,18 @@ function renderBoard() {
       <div class="muted">${esc(ex.name)}${facts.length ? " · " + facts.join(" · ") : ""}</div>
       ${ex.rules ? `<div class="rules-text">📜 ${esc(ex.rules).replace(/\n/g, "<br>")}</div>` : ""}
     </div>` : ""}
-    ${polls.map(pollHtml).join("")}
-    ${board.posts.length ? `<ul class="posts">${posts.map(p => `<li>
+    ${board.posts.length ? `<div class="board-part">
+      <h3>📣 Updates</h3>
+      <ul class="posts">${posts.map(p => `<li>
         <div class="post-meta">${esc(p.author || "Organiser")} · ${new Date(p.at).toLocaleDateString("en-CA", { month: "short", day: "numeric" })}</div>
         <div>${esc(p.body).replace(/\n/g, "<br>")}</div>
       </li>`).join("")}</ul>
-      ${board.posts.length > 3 ? `<button class="small link" id="morePosts">${showAllPosts ? "Show fewer" : `Show all ${board.posts.length} updates`}</button>` : ""}` : ""}`;
+      ${board.posts.length > 3 ? `<button class="small link" id="morePosts">${showAllPosts ? "Show fewer" : `Show all ${board.posts.length} updates`}</button>` : ""}
+    </div>` : ""}
+    ${polls.length ? `<div class="board-part">
+      <h3>🗳️ Polls</h3>
+      ${polls.map(pollHtml).join("")}
+    </div>` : ""}`;
 }
 
 $("board").addEventListener("click", async e => {

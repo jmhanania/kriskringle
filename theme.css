@@ -316,3 +316,7 @@ details.acct .menu-pop { min-width: 220px; }
   .topbar { flex-wrap: nowrap; }
   .nav-links { order: 0; flex-basis: auto; }
 }
+/* Board sections: Updates, then Polls */
+.board-part { display: flex; flex-direction: column; gap: var(--s3); }
+.board-part > h3 { margin: 0; font-size: var(--fs-md); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.board-part .poll + .poll { padding-top: var(--s3); border-top: 1px dashed var(--line); }
