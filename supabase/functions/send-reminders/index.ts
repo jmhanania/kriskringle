@@ -4,9 +4,10 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const SITE_URL = Deno.env.get("SITE_URL") ?? "https://kriskringle.jacobhanania.com";
-const FROM = Deno.env.get("EMAIL_FROM") ?? "Kris Kringle <kriskringle@jacobhanania.com>";
-// kriskringle@jacobhanania.com can't receive replies, so every email says so.
+// Site address and sender come from Supabase secrets (SITE_URL, EMAIL_FROM) so no addresses live in the repo.
+const SITE_URL = Deno.env.get("SITE_URL") ?? "";
+const FROM = Deno.env.get("EMAIL_FROM") ?? "";
+// The sending address can't receive replies, so every email says so.
 const NO_REPLY = `<p style="font-size:12px;color:#9a8c7e;margin:24px 0 0;padding-top:12px;border-top:1px solid #eadfca">This is an automated email from Kris Kringle, so please don't reply: this address can't receive messages. Questions? Ask your family's organiser.</p>`;
 
 const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
@@ -49,6 +50,7 @@ function email(r: Reminder, to: Reminder["recipients"][number]) {
 Deno.serve(async () => {
   const apiKey = Deno.env.get("RESEND_API_KEY");
   if (!apiKey) return Response.json({ error: "missing RESEND_API_KEY" }, { status: 500 });
+  if (!SITE_URL || !FROM) return Response.json({ error: "missing SITE_URL or EMAIL_FROM" }, { status: 500 });
 
   const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const { data, error } = await sb.rpc("claim_due_reminders");

@@ -14,15 +14,15 @@ create table private.settings (key text primary key, value text not null);
 insert into private.settings (key, value)
 values ('invite_code', 'KK-' || upper(encode(extensions.gen_random_bytes(4), 'hex')));
 
--- Existing data becomes the Hanania family.
-insert into public.families (name) values ('Hanania');
+-- Existing data becomes the first family (renamed by its organiser in the app).
+insert into public.families (name) values ('My family');
 
 alter table public.people add column family_id uuid references public.families(id) on delete cascade;
-update public.people set family_id = (select id from public.families where name = 'Hanania');
+update public.people set family_id = (select id from public.families order by created_at limit 1);
 alter table public.people alter column family_id set not null;
 
 alter table public.kk_events add column family_id uuid references public.families(id) on delete cascade;
-update public.kk_events set family_id = (select id from public.families where name = 'Hanania');
+update public.kk_events set family_id = (select id from public.families order by created_at limit 1);
 alter table public.kk_events alter column family_id set not null;
 
 drop index public.people_name_unique;
@@ -249,7 +249,7 @@ grant execute on all functions in schema public to anon, authenticated;
 -- Sees every family's name, counts and admins (to help with lost links), but not draws or wish lists.
 alter table public.people add column is_super_admin boolean not null default false;
 update public.people set is_super_admin = true
-where is_admin and family_id = (select id from public.families where name = 'Hanania');
+where is_admin and family_id = (select id from public.families order by created_at limit 1);
 
 create function private.super(p_code text) returns uuid
 language plpgsql stable set search_path = '' as $$

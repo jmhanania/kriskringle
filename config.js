@@ -1,4 +1,4 @@
-// Supabase project "Hanania Family". The publishable key is safe to expose:
+// Supabase project. The publishable key is safe to expose:
 // the database only allows calls to functions that check a person's link code.
 window.KK_CONFIG = {
   url: "https://lsjqvbochnoewzwgcygg.supabase.co",

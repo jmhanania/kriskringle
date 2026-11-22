@@ -1,4 +1,4 @@
--- Hanania Family database: shared family tables + Kris Kringle.
+-- Family database: shared family tables + Kris Kringle.
 -- Security model: RLS is on with no policies, and anon/authenticated have no table grants,
 -- so the API cannot touch tables directly. All access goes through the SECURITY DEFINER
 -- functions below, each of which first checks a person's secret link code (access_code).
